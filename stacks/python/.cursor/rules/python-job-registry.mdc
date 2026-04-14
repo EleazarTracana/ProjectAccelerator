@@ -1,0 +1,77 @@
+---
+description: Job registration via factory pattern with DB-driven configs and structured logging
+globs: src/app/job_bootstrap.py,src/orchestrators/**/factory.py
+---
+
+# Job Registry Convention
+
+## Factory Pattern Registration
+
+Jobs register via `@JobFactoryRegistry.register("job_name")`. The decorator stores a factory function keyed by name.
+
+```python
+# src/orchestrators/batch_processing/factory.py
+@JobFactoryRegistry.register("process_daily_batch")
+def create_batch_job(container: Container, config: dict):
+    svc = ProcessBatchOrchestrator(
+        container.ingestion_service,
+        container.metrics_service,
+    )
+    batch_size = config.get("batch_size", 500)
+
+    async def run():
+        await svc.run(batch_size=batch_size)
+
+    return run
+```
+
+## Side-Effect Import in job_bootstrap.py
+
+Factory modules are imported in `job_bootstrap.py` so `@register` decorators execute at startup.
+
+```python
+# src/app/job_bootstrap.py
+def _import_all_factories() -> None:
+    import src.orchestrators.batch_processing.factory
+    import src.orchestrators.reporting.factory
+    # Each import triggers @register side-effect
+```
+
+## DB-Driven Job Configs
+
+Job configurations live in a MongoDB collection, **not hardcoded**. Deploy new jobs or change schedules without restart.
+
+```python
+# Document in "job_configs" collection:
+# {
+#   "job_id": "process_daily_batch",
+#   "factory_key": "process_daily_batch",
+#   "schedule": {"seconds": 3600},
+#   "config": {"batch_size": 500},
+#   "app_role": "worker",
+#   "enabled": true
+# }
+```
+
+## Per-Run Logging via JobLogScope
+
+Use `JobLogScope(job_id)` for structured per-run logging. Inside orchestrators, call `current_run_id()` — **never generate a separate UUID**.
+
+```python
+# GOOD — uses the scope's run ID
+async def run(self):
+    run_id = current_run_id() or uuid.uuid4().hex[:8]
+    logger.info("[BATCH] run_id=%s start", run_id)
+    # ... work ...
+    logger.info("[BATCH] run_id=%s complete processed=%d", run_id, count)
+
+# BAD — creates orphaned run ID disconnected from job scope
+async def run(self):
+    my_id = uuid.uuid4().hex  # Don't do this
+```
+
+## Rules
+
+- Log **start** and **complete** (or **failed**) markers with counters for every job run.
+- **Never nest** `JobLogScope` inside scheduler-managed code — the scheduler already provides the scope.
+- Factory functions return a coroutine factory (`Callable[[], Awaitable[None]]`), not the service itself.

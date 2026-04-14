@@ -1,0 +1,19 @@
+// Unit test conventions:
+//
+// [Fact(DisplayName = "Should return not found when order does not exist")]
+// public async Task GetOrder_MissingId_ReturnsNotFound()
+// {
+//     var repo = Substitute.For<IOrderRepository>();
+//     repo.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Order?)null);
+//
+//     var sut = new GetOrderService(repo);
+//     var result = await sut.ExecuteAsync(99, CancellationToken.None);
+//
+//     result.Status.Should().Be(ResultStatus.NotFound);
+// }
+//
+// Rules:
+// - DisplayName mandatory on every test
+// - No // Arrange, // Act, // Assert comments
+// - Combine overlapping setups with richer assertions
+// - Use [Theory] for input variations

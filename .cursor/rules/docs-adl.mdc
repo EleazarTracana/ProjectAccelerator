@@ -1,0 +1,13 @@
+---
+description: When working with Architecture Decision Records (ADRs) or looking for historical arch choices
+globs: docs/adl/**/*.md
+alwaysApply: false
+---
+
+All Architecture Decision Records (ADRs) are located within `docs/adl`. Each ADR follows the MADR format.
+
+When creating or editing ADRs, use the structure in `docs-adr-template.mdc` and follow the documentation writing style in `docs-writing-style.mdc`.
+
+The valid statuses for an ADR include: PROPOSED, ACCEPTED, and RETIRED.
+
+You should *not* use RETIRED ADRs to inform your choices; you should get the user's confirmation before acting upon PROPOSED ADRs.

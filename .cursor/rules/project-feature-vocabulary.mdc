@@ -1,0 +1,17 @@
+---
+description: Shared vocabulary for feature areas, slices, and support code
+globs: src/**/*
+alwaysApply: false
+---
+
+# Feature Vocabulary
+
+Use a small, stable vocabulary when describing feature structure. The point is not to force every app into the same shape. The point is that we talk about similar structures the same way.
+
+An **area** is the bounded feature family (e.g., `Features/Orders/...` or `src/features/wallets/`). It groups related slices and gives them a common boundary. A **slice** is a concrete behavior inside that area — often a verb-based use case like `CreateOrder` or `get_wallet_detail`.
+
+**Shared support** is code reused by multiple slices inside one area. It usually lives under `Shared/` or `Common/` inside that area. It supports the slices, but it is not itself a slice.
+
+**Contracts** are the request, response, DTO, or message-shaped types that define what a slice accepts, returns, or passes around. **Persistence** is the storage-facing code that serves a slice or an area, such as repositories or query models.
+
+Use these words consistently in rules, ADRs, reviews, and code discussions. We do not need one rigid folder taxonomy everywhere. We do need one language for describing what the structure means.

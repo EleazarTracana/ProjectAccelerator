@@ -1,0 +1,10 @@
+# src/features/{area}/{verb}/schemas.py
+#
+# Feature-local request/response models.
+# Shared models used across features stay in src/shared/api/schemas.py.
+#
+# class GetItemResponse(BaseModel):
+#     id: str
+#     name: str
+#     status: str
+#     score: float | None = None

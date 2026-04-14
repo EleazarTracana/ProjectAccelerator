@@ -1,0 +1,40 @@
+---
+description: Default to parameterized Dapper SQL — stored procedures by exception only
+globs: src/**/Repositories/**/*.cs,src/**/Persistence/**/*.cs,src/**/Features/**/*.cs
+alwaysApply: false
+---
+
+# Dapper vs Stored Procedures
+
+Default to parameterized Dapper SQL written directly in the repository that owns the behavior. SQL stays close to the code that uses it, making the data access readable, testable, and refactorable alongside the feature.
+
+## Default — inline Dapper
+
+```csharp
+public async Task<Order?> GetByIdAsync(long id, CancellationToken ct)
+{
+    const string sql = """
+        SELECT Id, CustomerName, Status, CreatedAt
+        FROM [Order]
+        WHERE Id = @Id
+        """;
+    return await _connection.QuerySingleOrDefaultAsync<Order>(sql, new { Id = id });
+}
+```
+
+The SQL is visible. The parameters are explicit. The repository is the single owner of this query.
+
+## When stored procedures earn their place
+
+Stored procedures are not forbidden — they are reserved for situations where they provide a measurable, documented benefit:
+
+- **Benchmarked performance gain**: You measured, and the SP execution plan is meaningfully better for a hot path. You have the numbers.
+- **Complex atomicity that is genuinely clearer in SQL**: Multi-table operations where the transactional boundary is simpler to reason about in a single SQL unit. Note: "uses a transaction" alone is NOT justification — Dapper handles transactions fine.
+- **Explicit security boundary**: The database user has execute-only permissions and cannot issue ad-hoc queries. This is a deliberate security architecture choice, not a default.
+- **Shared database contract**: Multiple applications (not just yours) read/write through the same SP interface, and the SP is the stable contract between them.
+
+## Anti-pattern
+
+"We always use stored procedures because that is how our team has always done it" is not a reason. Neither is "stored procedures are more secure" without an actual security boundary in place.
+
+If you reach for an SP, document *which* of the four justifications applies. If none apply, use inline Dapper.

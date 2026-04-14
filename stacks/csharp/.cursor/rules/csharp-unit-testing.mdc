@@ -1,0 +1,69 @@
+---
+description: Unit test conventions — DisplayName, quality over quantity, no section comments
+globs: "**/*.Tests/**/*.cs"
+alwaysApply: false
+---
+
+# Unit Testing Conventions
+
+Every test method MUST use `[Fact(DisplayName = "...")]` with a descriptive sentence that reads naturally. The DisplayName is how a human understands intent when a test fails in CI — method names alone are not enough.
+
+Do not write `// Arrange`, `// Act`, `// Assert` comments. The structure should be obvious from whitespace and naming. If it is not obvious, the test is too complex.
+
+## Quality over quantity
+
+Two to four well-crafted tests that cover meaningful scenarios are worth more than a dozen shallow tests that each check one trivial property. When setup overlaps significantly and assertions are complementary, combine them into one test with richer assertions. Do not split artificially just to hit a count.
+
+## Good
+
+```csharp
+[Fact(DisplayName = "Should return not found when order does not exist")]
+public async Task GetOrder_MissingId_ReturnsNotFound()
+{
+    var repo = Substitute.For<IOrderRepository>();
+    repo.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Order?)null);
+
+    var sut = new GetOrderService(repo);
+    var result = await sut.ExecuteAsync(99, CancellationToken.None);
+
+    result.Status.Should().Be(ResultStatus.NotFound);
+}
+```
+
+## Bad
+
+```csharp
+[Fact] // Missing DisplayName
+public async Task Test1()
+{
+    // Arrange
+    var repo = Substitute.For<IOrderRepository>();
+    // Act
+    var sut = new GetOrderService(repo);
+    var result = await sut.ExecuteAsync(99, CancellationToken.None);
+    // Assert
+    Assert.Equal(ResultStatus.NotFound, result.Status);
+}
+```
+
+Missing DisplayName, meaningless method name, section comments adding nothing, classic Assert instead of fluent assertions.
+
+## Input variations
+
+Use `[Theory]` with `[InlineData]` when the same logic is tested with different inputs. Do not duplicate the entire test body for each variation.
+
+```csharp
+[Theory(DisplayName = "Should reject invalid quantities")]
+[InlineData(0)]
+[InlineData(-1)]
+[InlineData(-100)]
+public void CreateItem_InvalidQuantity_ReturnsValidationError(int quantity)
+{
+    var result = OrderItem.Create("Widget", quantity);
+    result.Status.Should().Be(ResultStatus.Invalid);
+}
+```
+
+## After writing tests
+
+Review the test file. Ask: does each test add a distinct scenario? Could any be combined without losing clarity? Are the DisplayNames accurate sentences? Fix before moving on.

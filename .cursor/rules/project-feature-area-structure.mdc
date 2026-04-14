@@ -1,0 +1,17 @@
+---
+description: Shared support code placement inside feature folders
+globs: src/**/*
+alwaysApply: false
+---
+
+# Feature Area Structure
+
+Feature folders should read like vertical slices, but the first level under the features directory does not have to be the slice itself. That first level can also be the domain or bounded area that groups related slices. The key insight: the area defines the family boundary, and then the concrete slices and their bounded support live inside it.
+
+That means the structure can legitimately look like `Features/<Area>/<Slice>/...` for user-facing behavior and `Features/<Area>/Shared/...` for local shared support. What we want to avoid is placing support code beside real slices as if it were just another slice.
+
+This is especially true for validators, shared request models, mappers, helpers, and other coordination code that has no direct endpoint behavior. The goal is not taxonomy for its own sake. The goal is that the folder structure tells the truth: this code supports the feature area, it is not the feature area.
+
+Avoid vague names like `Generic`. Prefer names that explain scope and intent. `Shared` or `Common` works when the code is bounded to one feature area. If the code is truly cross-cutting across many feature areas, it probably belongs outside that feature tree entirely.
+
+Do not try to force this through brittle heuristics like "every feature folder must contain an endpoint" or "every first-level folder must follow one taxonomy." Use the simpler questions instead: what is the bounded area, what is the concrete slice, and what is shared support for that area?

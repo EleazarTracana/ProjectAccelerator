@@ -1,0 +1,44 @@
+---
+description: Thin endpoint convention — endpoints are HTTP plumbing only
+globs: src/**/Features/**/*.cs
+alwaysApply: false
+---
+
+# API Endpoint Convention
+
+Endpoints bind the HTTP request, call one service method, and return the result. That is the entire job. No business logic, no orchestration, no "just this one helper." If you need a helper, extract it to a service in the same feature folder.
+
+One class per file. Request and response records get their own files.
+
+Use `[TranslateResultToActionResult]` with Ardalis.Result so the endpoint never manually maps status codes.
+
+## Good
+
+```csharp
+[HttpGet("{id:long}")]
+[TranslateResultToActionResult]
+public async Task<Result<GetOrderResponse>> Handle(long id, CancellationToken ct)
+    => await _service.ExecuteAsync(id, ct);
+```
+
+The endpoint does not know what "not found" means in HTTP terms. The Result type and the attribute handle that.
+
+## Bad
+
+```csharp
+[HttpGet("{id:long}")]
+public async Task<IActionResult> Handle(long id, CancellationToken ct)
+{
+    var order = await _repository.GetByIdAsync(id, ct);
+    if (order is null)
+        return NotFound();
+    var mapped = new GetOrderResponse(order.Id, order.Status.ToString(), order.Customer);
+    return Ok(mapped);
+}
+```
+
+This endpoint knows about the repository, null checks, mapping, and HTTP status codes. It is doing four jobs instead of one.
+
+## When the endpoint grows
+
+If you catch yourself adding private methods to an endpoint class, stop. That logic belongs in a service. The endpoint stays thin even if the service is two lines — the point is separation of concerns, not line count.

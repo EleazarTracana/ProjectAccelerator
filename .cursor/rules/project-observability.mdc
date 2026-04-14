@@ -1,0 +1,26 @@
+---
+description: Observability and logging discipline for services, jobs, APIs, and batch flows
+alwaysApply: true
+---
+
+# Observability & Logging Discipline
+
+- Treat observability as part of the feature. New or changed production behavior is not complete until logging and operator visibility are considered.
+- Prefer structured, grep-friendly log messages with stable keys like `order_id=...`, `user=...`, `run_id=...`, `elapsed_ms=...`, `items_missing=...`.
+- Log degraded paths, fallbacks, retries, unusual misses, and data-quality gaps. Do not only log hard failures.
+- Avoid noisy INFO logs for hot-path happy cases unless the event is operationally important. Use INFO for boundaries and key counters; use DEBUG for per-item chatter.
+- For jobs, orchestrators, and batch flows, always log `start`, `complete`, and `failed` markers plus the counters that explain the run outcome.
+- For batch processing, log counts such as `processed`, `skipped`, `missing`, `fallback_used`, `qualified`, or similar domain-specific totals.
+- For unexpected exceptions, emit a one-line summary that is easy to filter plus full traceback when it matters.
+- When behavior is retried, partially skipped, or left retryable, log that explicitly so operators can explain why work did or did not progress.
+- Prefer identifiers and counts over dumping large payloads. Log the minimum context needed to debug the issue.
+- Never log secrets, full credentials, raw auth headers, or unnecessary PII.
+
+## Services & API Paths
+
+- For new service methods, think through: what should an operator see on success, degraded success, empty result, and failure?
+- For fallbacks such as unavailable dependencies, cache misses, or classification fallbacks, log the reason and affected identifiers.
+
+## Verification
+
+- When adding observability, verify it in tests when practical and mention the key log names or counters in the final summary so operators know what to watch.

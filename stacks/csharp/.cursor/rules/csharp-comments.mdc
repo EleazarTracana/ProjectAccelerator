@@ -1,0 +1,75 @@
+---
+description: Comment discipline — no redundant inline comments, XML docs where they add value
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# Comment Discipline
+
+Code should communicate intent through naming and structure, not through comments that restate what the code already says. Redundant comments are noise — they rot faster than the code they describe and teach developers to stop reading them.
+
+## Inline comments
+
+Do not add comments that describe what the next line does. If the code needs a comment to be understood, rename the variable or extract a method.
+
+### Bad
+
+```csharp
+// Get the order from the database
+var order = await repository.GetByIdAsync(id, ct);
+
+// Check if the order is null
+if (order is null)
+    return Result.NotFound();
+
+// Map to response
+return Result.Success(MapToResponse(order));
+```
+
+### Good
+
+```csharp
+var order = await repository.GetByIdAsync(id, ct);
+if (order is null)
+    return Result.NotFound();
+
+return Result.Success(MapToResponse(order));
+```
+
+The code reads fine without the comments. Every comment was restating the obvious.
+
+## When inline comments ARE useful
+
+Comments that explain *why* — not *what* — earn their place. Business rules, non-obvious constraints, workarounds for external system quirks.
+
+```csharp
+// Courier API returns 200 with empty body when the shipment is still queued.
+// We treat this as "pending" rather than an error.
+if (response.IsSuccessStatusCode && string.IsNullOrEmpty(body))
+    return DeliveryStatus.Pending;
+```
+
+## XML documentation (///)
+
+Keep `///` on public API surfaces where the doc adds information beyond what the method signature already communicates. Do not add `///` to every public method just because a linter suggests it.
+
+### Good — adds context
+
+```csharp
+/// <summary>
+/// Calculates the fee based on distance tiers. Returns zero for distances
+/// under the minimum threshold defined in tenant configuration.
+/// </summary>
+public decimal CalculateDeliveryFee(decimal distanceKm)
+```
+
+### Bad — restates the signature
+
+```csharp
+/// <summary>
+/// Gets the order by id.
+/// </summary>
+/// <param name="id">The id.</param>
+/// <returns>The order.</returns>
+public Task<Order?> GetByIdAsync(long id, CancellationToken ct)
+```

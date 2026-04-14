@@ -1,0 +1,22 @@
+# src/shared/infrastructure/mongodb.py
+#
+# Implements kernel repository protocols using MongoDB + Motor.
+#
+# class MongoOrderRepository(OrderRepository):
+#     def __init__(self, db: MongoDatabase):
+#         self._col = db["orders"]
+#
+#     async def get(self, order_id: str) -> Order | None:
+#         doc = await self._col.find_one(
+#             {"order_id": order_id},
+#             projection={"_id": 0},  # Always project only needed fields
+#         )
+#         if doc is None:
+#             return None
+#         return Order(**doc)
+#
+# Patterns:
+# - Always project only needed fields
+# - Bound concurrent queries with asyncio.Semaphore
+# - Use bulk_write(ordered=False) for hot paths
+# - Private DTOs for Mongo-specific mapping when domain entity differs

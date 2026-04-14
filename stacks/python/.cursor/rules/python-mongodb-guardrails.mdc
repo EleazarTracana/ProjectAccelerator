@@ -1,0 +1,84 @@
+---
+description: MongoDB performance guardrails — projection, concurrency bounds, index probes, and bulk operations
+globs: src/shared/infrastructure/**/*.py,integration-test/**/*.py
+---
+
+# MongoDB Guardrails
+
+## Index Probes Over Collection-Wide Aggregates
+
+For per-key lookups, prefer `find().sort().limit(1)` before reaching for `$group`.
+
+```python
+# GOOD — index probe, O(1) with proper index
+doc = await col.find_one(
+    {"customer_id": cid, "status": "active"},
+    sort=[("created_at", DESCENDING)],
+    projection={"_id": 0, "order_id": 1, "total": 1},
+)
+
+# BAD — full collection scan via $group
+pipeline = [
+    {"$match": {"customer_id": cid}},
+    {"$group": {"_id": "$customer_id", "latest": {"$max": "$created_at"}}},
+]
+```
+
+## Always Project Only Needed Fields
+
+Never return full documents on hot paths. Explicit projection reduces network and memory.
+
+```python
+# GOOD
+await col.find(query, projection={"_id": 0, "order_id": 1, "status": 1})
+
+# BAD — returns entire document including large nested arrays
+await col.find(query)
+```
+
+## Bound Concurrent Mongo Queries
+
+Use `asyncio.Semaphore` — never unbounded `asyncio.gather`.
+
+```python
+# GOOD
+sem = asyncio.Semaphore(20)
+
+async def bounded_fetch(item_id: str):
+    async with sem:
+        return await col.find_one({"item_id": item_id})
+
+results = await asyncio.gather(*[bounded_fetch(i) for i in ids])
+
+# BAD — unbounded, may open hundreds of connections
+results = await asyncio.gather(*[col.find_one({"item_id": i}) for i in ids])
+```
+
+## Bulk Write on Hot Paths
+
+Use `bulk_write(ordered=False)` for batch mutations. Unordered allows parallelism on the server.
+
+```python
+ops = [UpdateOne({"_id": doc_id}, {"$set": {"status": "done"}}) for doc_id in batch]
+await col.bulk_write(ops, ordered=False)
+```
+
+## Explain Tests for Hot Queries
+
+New hot queries on large collections **must** get an `explain()` integration test confirming index usage.
+
+```python
+# integration-test/test_order_queries.py
+async def test_get_latest_order_uses_index(db):
+    explained = await db.command(
+        "explain",
+        {"find": "orders", "filter": {"customer_id": "test"}, "sort": {"created_at": -1}, "limit": 1},
+        verbosity="queryPlanner",
+    )
+    stage = explained["queryPlanner"]["winningPlan"]["stage"]
+    assert stage != "COLLSCAN", "Expected index scan, got collection scan"
+```
+
+## TTL Collections Are Operational Buffers
+
+TTL collections exist for ephemeral operational data (logs, transient caches). Treat incident readiness (alerts, dashboards, retention policies) as part of the feature, not an afterthought.

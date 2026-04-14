@@ -1,0 +1,77 @@
+# {{.ProjectName}} — CLAUDE.md
+
+## Architecture
+
+This project follows **vertical slice architecture** with clean inward dependency flow.
+
+- **Shared Kernel** (`src/shared/kernel/`): Pure entities and repository protocols. Zero external deps. This is sacred — no I/O, no framework imports.
+- **Infrastructure** (`src/shared/infrastructure/`): Implements kernel protocols (MongoDB via Motor, HTTP clients). The only layer that touches the outside world.
+- **Features** (`src/features/<area>/<verb>/`): Each feature is a verb-based use case with at most `router.py`, `service.py`, `schemas.py`, `job.py`. One verb per folder.
+- **Orchestrators** (`src/orchestrators/`): Cross-domain workflows composing 2+ feature services. Bounded concurrency, micro-batching, run_id correlation.
+- **Composition Root** (`src/app/container.py`): Single wiring point for all dependencies. No other file instantiates services.
+
+Routers are thin HTTP bindings — call ONE service method, return result. Business logic belongs in services.
+
+## Testing
+
+- **Unit tests**: `tests/` — run with `pytest`. Test services with mock repos.
+- **Integration tests**: `integration-test/` — require real MongoDB (Docker). Include `explain()` tests for hot query index verification.
+- Environment variables for integration tests: `MONGO_URI`, `TEST_DB_NAME`.
+- Default `pytest` runs only `tests/`. Integration tests run separately.
+
+## Observability
+
+- Jobs use `JobLogScope(job_id)` for per-run structured logging. Use `current_run_id()` inside orchestrators.
+- Log start/complete/failed markers with counters on every job run.
+- TTL collections are operational buffers — treat incident readiness as part of the feature.
+
+## Job Registry
+
+- Factory pattern: `@JobFactoryRegistry.register("job_name")` in `src/orchestrators/**/factory.py`.
+- Side-effect imports in `src/app/job_bootstrap.py` trigger registration.
+- Job configs stored in MongoDB collection — deploy new jobs without restart.
+
+## Documentation
+
+- Consult `docs/README.md` for documentation structure and "When working on..." lookup table.
+- Architecture Decision Records in `docs/adl/` — MADR format, one decision per file.
+- One-off scripts under `scripts/one-off/` — dated, documented, never part of the main application.
+
+## Conventions
+
+- Dependencies point inward: router -> service -> kernel. Never reverse.
+- New endpoint = new verb folder. Never add a second endpoint to an existing verb.
+- Cross-feature coordination = orchestrator, not feature-to-feature imports.
+- Always project only needed fields in MongoDB queries.
+- Bound concurrent Mongo queries with `asyncio.Semaphore` — no unbounded gather.
+- Services instantiated per request via constructor injection (no shared mutable state).
+
+## Persistent Memory (Engram)
+
+This project uses Engram for cross-session memory. The assistant saves observations proactively after architectural decisions, bug fixes, conventions, and discoveries.
+
+### Topic Key Schema
+
+```
+architecture/{component}     — Structural decisions (kernel, infrastructure, orchestrators)
+decision/{topic}             — Library choices, convention agreements, trade-off resolutions
+pattern/{name}               — Established patterns (naming, async, concurrency, DI)
+bugfix/{issue}               — Root cause analyses worth remembering across sessions
+discovery/{topic}            — Non-obvious findings about the codebase, tools, or frameworks
+config/{what}                — Environment setup, Docker, CI/CD, deployment configuration
+sdd/{change}/{phase}         — SDD workflow artifacts (proposal, spec, design, tasks)
+```
+
+### What to Save (Python Stack)
+
+- Motor/MongoDB query patterns and index decisions
+- asyncio concurrency boundaries (Semaphore limits, gather patterns)
+- Pydantic schema evolution decisions and migration strategies
+- Container wiring decisions and dependency graph changes
+- Job registry patterns and scheduler configuration choices
+- Orchestrator composition patterns and bounded concurrency trade-offs
+- TTL collection strategies and operational buffer sizing
+
+### Session Close
+
+Before ending a session, call `mem_session_summary` with goal, discoveries, accomplished, next steps, and relevant files.

@@ -1,0 +1,43 @@
+---
+description: Discriminated union result types for frontend API service calls
+globs: web-app/app/domain/**/services/*.ts
+alwaysApply: false
+---
+
+# Frontend Result Types
+
+API service functions return explicit result types, not thrown exceptions. This mirrors the backend's Result pattern and makes error handling visible in the type system.
+
+## Pattern
+
+```typescript
+export type GetOrderResult =
+  | { ok: true; order: OrderResponse }
+  | { ok: false; error: string; status?: number }
+
+export async function getOrder(request: Request, id: string): Promise<GetOrderResult> {
+  try {
+    const res = await fetch(apiUrl(`orders/${id}`))
+    if (!res.ok) {
+      return { ok: false, error: `Could not load order (${res.status})`, status: res.status }
+    }
+    return { ok: true, order: await res.json() }
+  } catch {
+    return { ok: false, error: "Could not load order" }
+  }
+}
+```
+
+## Why
+
+- No try-catch spam in loaders and components
+- Error states are part of the type, not invisible runtime paths
+- Loaders can pattern-match: `if (!result.ok) throw new Response(result.error, { status: result.status })`
+- Consistent across all domain services
+
+## Rules
+
+- Every API service function returns a discriminated union with `ok: true | false`
+- Success case carries the typed data
+- Error case carries a human-readable `error` string and optional HTTP `status`
+- The `catch` block returns a generic error message, never re-throws

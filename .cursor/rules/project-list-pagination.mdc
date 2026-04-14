@@ -1,0 +1,15 @@
+---
+description: Bounded list APIs and paginated loaders — offset/limit on the wire, page DTOs, and consistent URL shapes
+globs: src/**/router.py,src/**/Features/**/*.cs,web-app/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# List Pagination
+
+Growing datasets never stream back as raw unbounded arrays in list endpoints. The contract is always a **page**: a slice of rows plus enough metadata to fetch the next slice and to drive pagination UI. That keeps APIs predictable, protects the database and the browser, and gives operators a clear sense of volume.
+
+**Backend.** Query parameters are **`limit`** and **`offset`**. `limit` is bounded with a sensible default (often `20`) and a documented maximum per endpoint when domains differ. `offset` starts at `0`. The response is a **page shape**: **`items`**, **`total`**, **`limit`**, and **`offset`** echo the request so clients do not have to infer them. Domain-specific caps belong in a one-line note on the router or service when they are not obvious from the bounds.
+
+**Web.** Loaders that hydrate list routes always send **`limit`** and **`offset`** to the API — either directly or by deriving **`offset`** from **`page`** and **`limit`** carried in the URL. They read **`total`** from the response to render pagination controls. Changing page never strips unrelated search parameters: filters, sort, and search terms stay on the query string so each page is the same query with a different window.
+
+**URL shape by feature.** Generic list screens pick one convention and stick to it for that feature: **`limit` + `offset`** in the URL, or **`page` + `pageSize`** everywhere that feature touches navigation. Do not mix conventions within one feature.

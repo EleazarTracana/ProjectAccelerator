@@ -1,0 +1,41 @@
+---
+description: Writing style for documentation, ADRs, and system overviews
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Documentation Writing Style
+
+When writing or editing documentation (ADRs, system overviews, architecture docs), use this conceptual, narrative style so the result serves as a clear reference for anyone (human or AI) working on the codebase.
+
+## Principles
+
+**Conceptual first, details only where they matter.** Lead with the rationale and the "why." Go deep on trade-offs. Reserve implementation details (code, config, diagrams) for places where they clarify rather than clutter.
+
+**Narrative prose over bullet lists.** Prefer flowing paragraphs. Use bullets sparingly — for scannable lists (e.g., project roles) or when structure genuinely helps. Avoid rigid templates (Context / Decision / Rationale / Consequences) unless the format requires them.
+
+**Explain trade-offs we live with.** Every choice has downsides. Name them. Phrases like "The trade-off is..." or "We pay X for Y" make the document honest and useful.
+
+## Tone and Phrases
+
+- **"The key insight..."** — Call out the central idea when it matters.
+- **"I'm highlighting this because..."** — Explain why a nuance deserves attention.
+- **"Now, ..."** — Transition to a related point or nuance.
+- **"This is critical to understand"** — Emphasize when something is easy to get wrong.
+
+Use inclusive "we" when describing decisions. First-person is fine when it feels natural.
+
+## Structure
+
+1. **Open with the problem or question** — What are we deciding? What context does the reader need?
+2. **State the choice** — Clearly, early.
+3. **Explain the rationale** — Why this over alternatives? What would we lose with the other path?
+4. **Call out nuances** — Edge cases, flexibility, things that might surprise.
+5. **Close with trade-offs** — What we gain, what we give up, what discipline we need.
+
+## Avoid
+
+- Dense bullet lists when prose would read better
+- Long code blocks or JSON examples unless they are the clearest way to show the idea
+- Jargon without brief explanation
+- Hiding trade-offs or pretending a choice has no downside

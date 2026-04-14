@@ -1,0 +1,24 @@
+---
+description: Make implementation plans explicit enough to delegate safely to another agent
+alwaysApply: true
+---
+
+# Delegation-Ready Plans
+
+- If a plan may be handed to another agent, each TODO must name the exact component(s) to change.
+- For each component, specify: purpose, required behavior change, constraints, verification command, and anything explicitly out of scope.
+- If API contracts, middleware behavior, service signatures, or state management logic change, call that out at the component level instead of only in the phase summary.
+- Do not rely on "the agent will infer it from context" for cross-cutting work.
+
+## Required Per-TODO Detail
+
+1. Component or file(s) to change
+2. Why this component is changing
+3. Required behavior or invariant to preserve
+4. Risks or breakage warnings
+5. Verification command or evidence source
+
+## Reviewability
+
+- Plans should make it obvious whether a TODO is safe to start, how to review it, and what would count as done.
+- If a TODO is too broad to review in one pass, split it before implementation starts.

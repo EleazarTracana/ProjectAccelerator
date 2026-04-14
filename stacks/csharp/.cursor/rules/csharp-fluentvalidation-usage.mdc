@@ -1,0 +1,50 @@
+---
+description: Use FluentValidation where it simplifies input validation — do not force it everywhere
+globs: src/**/Features/**/*.cs
+alwaysApply: false
+---
+
+# FluentValidation Usage
+
+Use FluentValidation when it makes input validation easier to read, reuse, and evolve. Validators pull recurring rules out of endpoints and into declarative, testable classes. This keeps endpoints thin and validation logic centralized per feature.
+
+## Good use — recurring input rules
+
+```csharp
+public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
+{
+    public CreateOrderRequestValidator()
+    {
+        RuleFor(x => x.CustomerName)
+            .NotEmpty()
+            .MaximumLength(200);
+
+        RuleFor(x => x.Items)
+            .NotEmpty()
+            .WithMessage("Order must contain at least one item");
+
+        RuleForEach(x => x.Items).ChildRules(item =>
+        {
+            item.RuleFor(i => i.Quantity).GreaterThan(0);
+        });
+    }
+}
+```
+
+The endpoint just calls `_validator.ValidateAsync(request)` or relies on the pipeline behavior. Clean.
+
+## When NOT to use FluentValidation
+
+Do not force FluentValidation where plain domain logic is clearer. If the "validation" is really a business rule that depends on state, relationships, or external data, it belongs in the service or domain model — not in a validator class that pretends to be stateless input checking.
+
+```csharp
+// This is domain logic, not input validation
+if (customer.HasReachedOrderLimit())
+    return Result.Conflict("Customer has reached the maximum number of active orders");
+```
+
+Putting this in a FluentValidation validator would require injecting the repository, querying state, and blurring the line between input validation and business rules.
+
+## Guideline
+
+Ask: "Is this checking the shape and constraints of the input itself?" If yes, FluentValidation is a good fit. "Is this checking business state or cross-entity rules?" If yes, keep it in the service layer.

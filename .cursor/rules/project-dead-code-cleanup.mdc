@@ -1,0 +1,26 @@
+---
+description: Remove dead code and unused imports without breaking registries, routers, or kernel contracts
+globs: "**/*.py,**/*.cs,**/*.ts,**/*.tsx"
+alwaysApply: false
+---
+
+# Dead Code Cleanup
+
+## Remove when clearly safe
+
+- Unused imports and locals after search confirms no references (including tests and factories).
+- Unreachable code after `return` / `raise` / `throw` and stale commented-out blocks — version control holds history.
+- Wrappers that only forward arguments and add no validation, logging, or domain semantics.
+
+## Do not assume dead without checking (common false positives)
+
+- **Job registries / factory registrations**: modules imported for side effects (`@register` decorators, DI extension methods) may look unused but are load-bearing. Check bootstrap and factory files before deleting.
+- **Kernel / domain contracts**: "unused" types, protocols, or interfaces may define boundaries for infrastructure or features. Find implementers and callers outside the defining file.
+- **Routers and endpoint wiring**: symbols may only appear in `include_router`, `MapControllers`, or attribute metadata. Confirm with app load or tests.
+
+## Guardrails
+
+- **Scope**: touch only files needed for the task. No drive-by repo-wide cleanup in the same PR.
+- **Verify**: run the relevant test suite after changes. Integration suites may live separately from unit tests.
+- **Keep** comments that document **why** (invariants, trade-offs, ops) — not noise that duplicates obvious code.
+- **Large removals**: prefer a dedicated small change set; list major deleted modules in the PR description.

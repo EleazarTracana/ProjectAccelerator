@@ -1,0 +1,5 @@
+# [pytest]
+# asyncio_mode = auto
+# testpaths = tests
+# Integration tests live in integration-test/ (separate, external resources).
+# Default pytest only runs tests/ (unit + service tests).

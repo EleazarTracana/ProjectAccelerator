@@ -1,0 +1,15 @@
+# src/features/{area}/{verb}/router.py
+#
+# Thin HTTP binding. Bind request, call ONE service method, return result.
+#
+# router = APIRouter()
+#
+# @router.get("/{item_id}", response_model=GetItemResponse)
+# async def get_item(item_id: str, request: Request):
+#     c = request.app.state.container
+#     return await GetItemService(
+#         c.item_repo, c.metrics_repo,
+#     ).execute(item_id)
+#
+# Business logic, validation, and data assembly belong in the service.
+# The router's only job is HTTP plumbing.

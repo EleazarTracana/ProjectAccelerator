@@ -1,0 +1,24 @@
+# src/app/job_bootstrap.py
+#
+# Dynamic job registration using factory pattern.
+#
+# def _import_all_factories() -> None:
+#     """Import every factory module so @register decorators execute."""
+#     import src.orchestrators.batch_processing.factory
+#     # ... all factories auto-register via @JobFactoryRegistry.register
+#
+# async def register_jobs_from_registry(container, scheduler, app_role):
+#     _import_all_factories()
+#     registry = MongoJobRegistryRepo(container.db)
+#     docs = await registry.list_for_runner(app_role)
+#
+#     for doc in docs:
+#         factory_fn = JobFactoryRegistry.resolve(doc["factory_key"])
+#         coro_factory = factory_fn(container, doc["config"])
+#         scheduler.register_job(
+#             job_id=doc["job_id"],
+#             coro_factory=coro_factory,
+#             interval_seconds=doc["schedule"]["seconds"],
+#         )
+#
+# Advantage: Jobs live in DB collection. Deploy new jobs without restart.

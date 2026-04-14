@@ -1,0 +1,28 @@
+version: 1
+stacks:
+  python:
+    name: "Python / FastAPI"
+    detect:
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "*.py"
+    rules_dir: "stacks/python/.cursor/rules"
+    skeleton_dir: "stacks/python/skeleton"
+    claude_template: "stacks/python/CLAUDE.md.template"
+  csharp:
+    name: "C# / .NET"
+    detect:
+      - "*.csproj"
+      - "*.sln"
+    rules_dir: "stacks/csharp/.cursor/rules"
+    skeleton_dir: "stacks/csharp/skeleton"
+    claude_template: "stacks/csharp/CLAUDE.md.template"
+  frontend:
+    name: "React Router 7"
+    detect:
+      - "react-router.config.ts"
+      - "package.json"
+    rules_dir: "stacks/frontend/.cursor/rules"
+    skeleton_dir: "stacks/frontend/skeleton"
+    claude_template: ""
+universal_rules_dir: ".cursor/rules"

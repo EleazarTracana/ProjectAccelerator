@@ -1,0 +1,20 @@
+# Local development stack
+# services:
+#   mongo:
+#     image: mongo:7
+#     ports:
+#       - "27018:27017"  # Non-default port to avoid conflicts
+#     volumes:
+#       - mongo-data:/data/db
+#
+#   api:
+#     build: .
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - MONGO_URI=mongodb://mongo:27017/{project}
+#     depends_on:
+#       - mongo
+#
+# volumes:
+#   mongo-data:

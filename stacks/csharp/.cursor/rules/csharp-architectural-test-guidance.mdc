@@ -1,0 +1,39 @@
+---
+description: Architectural tests protect broad invariants — not every regression belongs here
+globs: src/**/*.Tests/Architecture/**/*.cs
+alwaysApply: false
+---
+
+# Architectural Test Guidance
+
+Architectural tests protect broad, durable structural invariants: project dependency boundaries, forbidden cross-feature references, naming conventions for public contracts. They are the guardrails that prevent large-scale structural drift.
+
+## Good candidates for architectural tests
+
+- **Dependency direction**: Feature projects must not reference each other. Infrastructure must not reference API layer.
+- **Forbidden dependencies**: No direct `HttpClient` usage outside the infrastructure layer. No `System.Data.SqlClient` outside repositories.
+- **Feature isolation**: Classes in `Features/Orders/` must not reference classes in `Features/Billing/` directly.
+- **Convention enforcement**: All endpoint classes must inherit from a specific base or implement a specific interface.
+
+```csharp
+[Fact(DisplayName = "Feature folders must not reference other feature folders")]
+public void Features_ShouldNotCrossReference()
+{
+    var result = Types.InAssembly(typeof(Program).Assembly)
+        .That().ResideInNamespace("Features.Orders")
+        .ShouldNot().HaveDependencyOn("Features.Billing")
+        .GetResult();
+
+    result.IsSuccessful.Should().BeTrue();
+}
+```
+
+## Bad candidates for architectural tests
+
+- **Regressions on specific DTOs or properties**: If a bug happened because a response DTO was missing a field, write a unit test for that mapping — not an architectural test that scans all DTOs.
+- **Heuristic-based checks**: Tests that guess intent from property names (e.g., "all properties ending in Id must be long") are brittle and generate false positives.
+- **Single-class rules**: If the invariant only applies to one or two classes, a unit test is simpler and more explicit.
+
+## The question to ask
+
+Before writing an architectural test, ask: "Is this a structural invariant that affects the entire project, or is this a specific behavior I can test directly?" If the answer is "specific behavior," write a unit or integration test instead.

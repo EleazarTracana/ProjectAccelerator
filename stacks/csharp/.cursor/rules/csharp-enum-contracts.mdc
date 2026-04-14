@@ -1,0 +1,47 @@
+---
+description: Expose enum values as readable names in API contracts, not numeric IDs
+globs: src/**/Features/**/*.cs
+alwaysApply: false
+---
+
+# Enum Contracts Convention
+
+In public API contracts — request DTOs, response DTOs, webhook payloads — enum values are exposed as their string names, not raw numeric IDs. A consumer reading `"Status": "Completed"` understands the state. A consumer reading `"Status": 3` does not.
+
+## Response records
+
+```csharp
+// Good — consumer sees "Shipped", "Delivered", "Cancelled"
+public record GetOrderResponse(long Id, string Status, string CustomerName);
+
+// Bad — consumer sees 1, 2, 3 and needs a lookup table
+public record GetOrderResponse(long Id, int StatusId, string CustomerName);
+```
+
+## Property naming
+
+Prefer `Status` over `StatusId` in contracts. The `Id` suffix implies a foreign key to a lookup table, which is an implementation detail the API consumer should not need to know about.
+
+```csharp
+// Good
+public record UpdateOrderRequest(string Status);
+
+// Bad
+public record UpdateOrderRequest(int StatusId);
+```
+
+## Legacy tables
+
+Some existing tables may store enums as integer IDs internally. That is an implementation detail. The repository or mapping layer translates between the internal integer and the external string name. The API contract always uses the readable name.
+
+```csharp
+// In the repository or mapper
+var response = new GetOrderResponse(
+    Id: row.Id,
+    Status: Enum.Parse<OrderStatus>(row.Status).ToString(),
+    CustomerName: row.CustomerName);
+```
+
+## When numeric IDs are acceptable
+
+If you are building an internal system-to-system contract where both sides share the same enum definition and performance is critical, numeric values may be justified. Document the decision. For any consumer-facing or third-party API, use string names.

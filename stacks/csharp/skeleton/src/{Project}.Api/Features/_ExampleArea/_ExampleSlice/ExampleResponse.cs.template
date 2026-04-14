@@ -1,0 +1,2 @@
+// Feature-local response record. Enum values as names, not IDs.
+// public record GetOrderResponse(long Id, string Status, string CustomerName, ...);

@@ -1,0 +1,26 @@
+---
+description: Test-first and strict review-loop discipline for behavior changes and bug fixes
+alwaysApply: true
+---
+
+# TDD & Review Loop
+
+- For non-trivial logic changes, bug fixes, and behavior changes, default to test-first work.
+- Write or update the smallest test that proves the expected behavior before implementing the change.
+- Run the targeted test to confirm the failure is real and relevant, then implement the minimal fix.
+- After the targeted test passes, run the broader verification needed for the touched area before claiming completion.
+- Do not describe work as done unless you can separate: `changed in code`, `verified locally`, and `verified in runtime/deployed environment`.
+
+## Iteration Discipline
+
+- When work is broken into TODOs or phases, complete one slice, then stop and review before starting the next.
+- The review pass must check: correctness, regressions, edge cases, naming/clarity, missing tests, and observability gaps.
+- Fix important review findings before moving to the next TODO.
+- If a review changes behavior, re-run verification before continuing.
+
+## Anti-Slippage Rules
+
+- Do not skip tests because the change looks small.
+- Do not write a batch of code first and "add tests later."
+- Do not move to the next step just because the code compiles.
+- Do not claim a checklist item is met without evidence.

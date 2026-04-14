@@ -1,0 +1,12 @@
+# src/shared/api/schemas.py
+#
+# Shared response models used across multiple features.
+#
+# @dataclass
+# class PageResponse(Generic[T]):
+#     items: list[T]
+#     total: int
+#     limit: int
+#     offset: int
+#
+# Feature-specific request/response models live in the feature's schemas.py.

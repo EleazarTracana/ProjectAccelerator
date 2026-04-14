@@ -1,0 +1,34 @@
+---
+description: Logging discipline for pipeline steps — log intent, branches, outcomes, not noise
+globs: src/**/Steps/*.cs
+alwaysApply: false
+---
+
+# Provider/Step Logging
+
+Logs in pipeline steps should explain the part of the workflow that matters for troubleshooting. A step that processes data, calls an external service, or makes a routing decision should log enough for an operator to reconstruct what happened without reading the code.
+
+## What to log
+
+- **Intent of outbound actions**: "Sending delivery update to courier API for shipment {ShipmentId}"
+- **Reason for branches or skips**: "Skipping notification — customer opted out of delivery alerts"
+- **Validation failures that change flow**: "Payload validation failed: missing tracking number, aborting step"
+- **External dependency involved**: Name the service, API, or queue. "Publishing to order-events queue" not just "Publishing message."
+- **Outcome that changes the next step**: "Courier returned status Delivered, marking shipment complete"
+- **Identifiers and counts**: Order ID, batch size, correlation ID. Not full request/response payloads.
+
+```csharp
+_logger.LogInformation(
+    "Sending status update to courier API for shipment {ShipmentId}, current status: {Status}",
+    context.ShipmentId, context.CurrentStatus);
+```
+
+## What NOT to log
+
+- **Entry/exit of every method**: "Entering ValidateStep" / "Exiting ValidateStep" adds noise without insight.
+- **Full payloads**: Log identifiers and counts, not serialized objects. Payloads belong in diagnostic traces, not standard logs.
+- **Redundant context**: If the correlation ID is already in the log scope, do not repeat it in every message.
+
+## Proportionality
+
+A step that makes a critical external call deserves an info-level log before and after. A step that performs a trivial transformation might need nothing at all, or at most a debug-level entry. Match the log level to the step's significance in the pipeline.

@@ -1,0 +1,35 @@
+---
+description: DDD-aligned project structure for React Router 7 frontend applications
+globs: web-app/**/*.{ts,tsx,js,jsx,css}
+alwaysApply: false
+---
+
+# Frontend Project Structure
+
+The frontend mirrors the backend's domain-driven design. The same bounded contexts, the same vocabulary, the same separation between domain logic and presentation.
+
+## Domain Folders
+
+`web-app/app/domain/<domain-name>/` is where business logic lives. Each domain folder can contain:
+
+- `types/` — entities and contracts that mirror backend domain models
+- `lib/` — pure client-side rules, calculations, formatters (no I/O)
+- `services/` — API fetchers, orchestration, client-side use cases
+- `components/` — UI components reused across multiple routes within this domain
+- `api-routes/` — action-only route modules for forms (registered in routes.ts)
+
+Domains must not nest another `domain/` or replicate `pages/*/routes/`.
+
+## Page Folders
+
+`web-app/app/pages/<area>/routes/` holds navigation routes. Each route module contains the route component, its loader, and its action. Layouts live alongside their child routes.
+
+## Shared
+
+- `web-app/app/components/` — design system primitives (buttons, cards, tables)
+- `web-app/app/lib/` — cross-cutting utilities
+- `web-app/app/hooks/` — generic React hooks
+
+## Adding New Features
+
+New domain logic goes in `domain/<name>/`. New pages go in `pages/<area>/routes/`. If a component is used by only one route, keep it in that route's folder. Only promote to `domain/<name>/components/` when reused across multiple routes.

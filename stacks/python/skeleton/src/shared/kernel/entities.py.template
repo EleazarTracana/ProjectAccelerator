@@ -1,0 +1,22 @@
+# src/shared/kernel/entities.py
+#
+# Pure dataclasses. No I/O, no external dependencies, no side effects.
+# These define the vocabulary of the domain.
+#
+# @dataclass
+# class Order:
+#     id: str
+#     customer_id: str
+#     status: str
+#     items: list[OrderItem]
+#     created_at: str
+#     total_amount: float | None = None
+#
+# @dataclass
+# class OrderItem:
+#     product_id: str
+#     quantity: int
+#     unit_price: float
+#
+# Design: Separate immutable ingestion fields from derived/enriched fields.
+# Use `| None` defaults for fields populated by later processing stages.

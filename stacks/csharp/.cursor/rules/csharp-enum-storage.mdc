@@ -1,0 +1,43 @@
+---
+description: Store .NET enums as NVARCHAR string names in the database, not integer IDs
+globs: src/**/Repositories/**/*.cs,scripts/database/**/*.sql
+alwaysApply: false
+---
+
+# Enum Storage Convention
+
+Store .NET enum values as `NVARCHAR(50)` string names, not integer ordinals. The column is named after the concept it represents — no `Id` suffix.
+
+## Why strings
+
+Integer storage couples the database to the declaration order of your enum. Adding a value in the middle, reordering, or removing a deprecated value silently corrupts every existing row. String names are self-describing, survive refactoring, and make SQL queries readable without a lookup table.
+
+## SQL column
+
+```sql
+ALTER TABLE [Order]
+ADD [Status] NVARCHAR(50) NOT NULL DEFAULT 'Created';
+```
+
+Not `StatusId INT`, not `StatusCode INT`. Just `Status` as a readable string.
+
+## Writing in C#
+
+```csharp
+var parameters = new { Status = order.Status.ToString() };
+await connection.ExecuteAsync(
+    "UPDATE [Order] SET Status = @Status WHERE Id = @Id", parameters);
+```
+
+## Reading in C#
+
+```csharp
+var row = await connection.QuerySingleOrDefaultAsync<dynamic>(
+    "SELECT Id, Status FROM [Order] WHERE Id = @Id", new { Id = id });
+
+var status = Enum.Parse<OrderStatus>(row.Status);
+```
+
+## Trade-off
+
+String storage uses slightly more space than an int and cannot be indexed as efficiently for very high-volume filtering. For the vast majority of use cases, the safety and readability outweigh the marginal performance cost. If you hit a case where enum column performance is measurably critical, document it in an ADR before switching to integer storage.

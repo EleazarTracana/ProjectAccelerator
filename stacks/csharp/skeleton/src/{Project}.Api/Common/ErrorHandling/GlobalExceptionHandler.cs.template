@@ -1,0 +1,9 @@
+// Global exception handler maps unhandled exceptions to HTTP status codes.
+//
+// HttpRequestException        -> 502 Bad Gateway
+// TaskCanceledException       -> 504 Gateway Timeout
+// OperationCanceledException  -> 499 Client Closed Request
+// Generic Exception           -> 500 Internal Server Error
+//
+// Implements IExceptionHandler. Registered in Program.cs:
+// builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

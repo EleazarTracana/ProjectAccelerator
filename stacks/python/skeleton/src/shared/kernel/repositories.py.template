@@ -1,0 +1,23 @@
+# src/shared/kernel/repositories.py
+#
+# Abstract repository protocols. The domain defines WHAT it needs;
+# infrastructure defines HOW to get it.
+#
+# class OrderRepository(ABC):
+#     @abstractmethod
+#     async def get(self, order_id: str) -> Order | None: ...
+#
+#     @abstractmethod
+#     async def get_many(self, order_ids: list[str]) -> list[Order]: ...
+#
+#     @abstractmethod
+#     async def save(self, order: Order) -> None: ...
+#
+# class MetricsRepository(ABC):
+#     @abstractmethod
+#     async def get_ranked(
+#         self, *, min_count: int, limit: int | None = None,
+#     ) -> list[Metrics]: ...
+#
+# Infrastructure (e.g., MongoOrderRepository) implements these protocols.
+# Feature services depend on the ABC, never on the implementation.

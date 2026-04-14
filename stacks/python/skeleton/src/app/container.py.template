@@ -1,0 +1,50 @@
+# src/app/container.py
+#
+# SINGLE DECISION POINT for all dependency wiring.
+# This is the composition root. No other code instantiates services.
+#
+# @dataclass
+# class Container:
+#     # Infrastructure
+#     db: MongoDatabase
+#     http_client: HttpClient
+#
+#     # Repositories (implement kernel protocols)
+#     order_repo: MongoOrderRepository
+#     metrics_repo: MongoMetricsRepository
+#
+#     # Feature services
+#     order_service: GetOrderService
+#     ingestion: IngestionService
+#
+#     # Orchestrators
+#     batch_orchestrator: ProcessBatchOrchestrator
+#
+#     # Scheduler
+#     scheduler: SchedulerService
+#
+#
+# def build_container(config: Config | None = None) -> Container:
+#     config = config or Config.from_env()
+#     db = MongoDatabase(config.mongo_uri)
+#     http_client = HttpClient()
+#
+#     # Repositories
+#     order_repo = MongoOrderRepository(db)
+#     metrics_repo = MongoMetricsRepository(db)
+#
+#     # Services (explicit dependency injection)
+#     ingestion = IngestionService(order_repo, http_client)
+#     metrics_service = MetricsService(metrics_repo)
+#
+#     # Orchestrators
+#     batch = ProcessBatchOrchestrator(ingestion, metrics_service)
+#
+#     return Container(
+#         db=db, http_client=http_client,
+#         order_repo=order_repo, metrics_repo=metrics_repo,
+#         order_service=GetOrderService(order_repo, metrics_repo),
+#         ingestion=ingestion,
+#         batch_orchestrator=batch,
+#         scheduler=SchedulerService(),
+#     )

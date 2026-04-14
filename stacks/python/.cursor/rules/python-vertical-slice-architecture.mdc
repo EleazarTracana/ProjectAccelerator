@@ -1,0 +1,63 @@
+---
+description: Vertical slice architecture for Python/FastAPI — features are verb-based use cases, not entity buckets
+globs: src/**/*.py,tests/**/*.py
+---
+
+# Vertical Slice Architecture
+
+A feature is a **verb-based use case** (e.g., `create_order`, `get_user_detail`), not an entity bucket.
+
+## Feature Layout
+
+Features live under `src/features/<area>/<verb>/` with at most four files:
+
+```
+src/features/
+  orders/
+    create_order/
+      router.py
+      service.py
+      schemas.py
+    get_order_detail/
+      router.py
+      service.py
+      schemas.py
+  notifications/
+    send_notification/
+      service.py
+      job.py
+```
+
+Area folders (`orders/`, `notifications/`) are **grouping prefixes only** — they carry no runtime behavior.
+
+## Dependency Rules
+
+| Layer | May depend on | Must NOT depend on |
+|---|---|---|
+| `features/**/router.py` | Its own service, `shared/api/`, `shared/kernel/` | Other features, orchestrators |
+| `features/**/service.py` | `shared/kernel/`, `shared/infrastructure/` | Other features, `api/routes/` |
+| `orchestrators/**/service.py` | Feature services, `shared/kernel/` | Other orchestrators |
+| `shared/kernel/` | Nothing external | Features, orchestrators, infrastructure |
+
+## Rules
+
+- **New endpoint or job** → create a new verb folder. Never add a second endpoint to an existing verb.
+- **Cross-domain workflow** → goes into `orchestrators/`, not into a feature.
+- **Routers bind HTTP**, call ONE service method, return the result. No business logic in routers.
+- **Services are instantiated per request** — no shared mutable state.
+
+## Example: Wrong vs Right
+
+```python
+# WRONG — entity bucket with multiple verbs crammed in
+# src/features/orders/service.py
+class OrderService:
+    async def create(self, ...): ...
+    async def get_detail(self, ...): ...
+    async def cancel(self, ...): ...
+
+# RIGHT — one verb, one folder, one service
+# src/features/orders/create_order/service.py
+class CreateOrderService:
+    async def execute(self, cmd: CreateOrderCommand) -> Order: ...
+```

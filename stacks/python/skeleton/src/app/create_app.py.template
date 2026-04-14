@@ -1,0 +1,23 @@
+# src/app/create_app.py
+#
+# FastAPI application factory.
+#
+# def create_app(container: Container | None = None) -> FastAPI:
+#     if container is None:
+#         container = build_container()
+#
+#     app = FastAPI(title="{Project}")
+#     app.state.container = container
+#
+#     # Include feature routers
+#     app.include_router(get_order_router, prefix="/orders", tags=["orders"])
+#     # ... more routers
+#
+#     return app
+#
+# Lifecycle (startup/shutdown):
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     await app.state.container.db.connect()
+#     yield
+#     await app.state.container.db.close()

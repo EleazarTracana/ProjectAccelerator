@@ -1,0 +1,76 @@
+# {{.ProjectName}}
+
+## Architecture
+
+This is a C#/.NET backend following vertical slice architecture with feature-area grouping. Dependencies flow inward: endpoints depend on services, services depend on repositories and domain, infrastructure depends on nothing above it.
+
+- **Endpoints** are thin HTTP plumbing. They bind the request, call one service method, and return the result using `[TranslateResultToActionResult]` with Ardalis.Result.
+- **Services** contain use-case logic. They receive dependencies via constructor injection and return `Result<T>` for business outcomes.
+- **Repositories** own data access using parameterized Dapper SQL. Stored procedures are used by exception only (see `csharp-dapper-vs-stored-procedures.mdc`).
+- **Features** are organized as `Features/{Area}/{Slice}/`. Each slice contains its endpoint, service, request, and response. Shared support code lives in `Features/{Area}/Shared/`.
+- **Program.cs** is the single decision point for all dependency registration and middleware wiring.
+
+Feature folders must not reference other feature folders. Cross-feature communication goes through shared abstractions in `Common/`.
+
+## Rules (Always Apply)
+
+The following conventions are always active:
+
+- **TDD discipline**: Test-first for behavior changes and bug fixes. See `guardrail-tdd-review-loop.mdc`.
+- **Observability**: Structured logging with correlation IDs, log intent not mechanics. See `project-observability.mdc`.
+- **Delegation-ready plans**: Break work into verifiable steps before implementing. See `guardrail-delegation-ready-plans.mdc`.
+- **Feature vocabulary**: Use the project's domain terms consistently. See `project-feature-vocabulary.mdc`.
+
+## Testing
+
+- **Unit tests** live in `src/{Project}.Api.Tests/Unit/`. Every test uses `[Fact(DisplayName = "...")]` with a descriptive sentence. No `// Arrange` / `// Act` / `// Assert` comments. Quality over quantity.
+- **Architecture tests** live in `src/{Project}.Api.Tests/Architecture/`. They enforce structural invariants (dependency direction, feature isolation), not specific behaviors.
+- **Integration tests** live in a separate `{Project}.Api.IntegrationTests` project when needed. They test real HTTP pipelines and database interactions.
+- Use NSubstitute for mocking, FluentAssertions for assertions, xUnit as the test framework.
+
+## Documentation
+
+- Consult `docs/README.md` before making non-trivial changes to understand what documentation exists.
+- Architecture decisions go in `docs/adl/` using the MADR format.
+- Do not create documentation preemptively. Write it when its absence would cost the next developer real time.
+
+## Conventions
+
+- Enum values stored as `NVARCHAR(50)` string names in the database, exposed as string names in API contracts.
+- FluentValidation for input shape validation. Business rules stay in the service layer.
+- Comments explain *why*, not *what*. No redundant inline comments.
+- Pipeline step logs capture intent, branch reasons, and outcomes — not entry/exit noise.
+
+## One-Off Scripts
+
+Database migrations and one-off scripts live in `scripts/`. Each script is self-contained with a clear name indicating what it does and when it should run. Scripts are not part of the application build — they are executed manually or through a deployment pipeline.
+
+## Persistent Memory (Engram)
+
+This project uses Engram for cross-session memory. The assistant saves observations proactively after architectural decisions, bug fixes, conventions, and discoveries.
+
+### Topic Key Schema
+
+```
+architecture/{component}     — Structural decisions (auth, database, caching, middleware)
+decision/{topic}             — Library choices, convention agreements, trade-off resolutions
+pattern/{name}               — Established patterns (naming, error handling, validation)
+bugfix/{issue}               — Root cause analyses worth remembering across sessions
+discovery/{topic}            — Non-obvious findings about the codebase, tools, or frameworks
+config/{what}                — Environment setup, CI/CD, deployment configuration
+sdd/{change}/{phase}         — SDD workflow artifacts (proposal, spec, design, tasks)
+```
+
+### What to Save (C# Stack)
+
+- Dapper query patterns and SQL conventions chosen for this project
+- FluentValidation vs service-layer validation boundary decisions
+- Ardalis.Result usage patterns and any custom result extensions
+- Middleware pipeline ordering decisions and why
+- NuGet package choices with trade-off rationale
+- Feature isolation violations found and how they were resolved
+- Database migration strategies and schema evolution decisions
+
+### Session Close
+
+Before ending a session, call `mem_session_summary` with goal, discoveries, accomplished, next steps, and relevant files.

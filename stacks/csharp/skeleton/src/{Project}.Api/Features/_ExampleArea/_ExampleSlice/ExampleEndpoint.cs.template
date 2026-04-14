@@ -1,0 +1,12 @@
+// {Project}.Api / Features / {Area} / {Slice} / {Slice}Endpoint.cs
+//
+// Endpoints are thin. Bind request, call ONE service method, return result.
+// Use [TranslateResultToActionResult] with Ardalis.Result for automatic HTTP mapping.
+//
+// [HttpGet("{id:long}")]
+// [TranslateResultToActionResult]
+// public async Task<Result<GetOrderResponse>> Handle(long id, CancellationToken ct)
+//     => await _service.ExecuteAsync(id, ct);
+//
+// If the endpoint needs private helpers, extract to a service in this folder.
+// One class per file. Request/Response records get their own files.

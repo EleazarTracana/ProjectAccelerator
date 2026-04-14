@@ -1,0 +1,17 @@
+---
+description: Writing style for Cursor rules themselves
+globs: .cursor/rules/*.mdc
+alwaysApply: false
+---
+
+# Cursor Rule Writing Style
+
+Cursor rules should be short, focused, and easy to act on. The goal is not to write mini-specs. The goal is to leave the next agent with a clear mental model and just enough constraint to make good decisions.
+
+When the topic is conceptual, prefer narrative prose. Lead with the central idea and then state the practical guidance. Call out trade-offs only when they are the point of the rule or when skipping them would make the rule misleading. When the topic is procedural, be sharper and more mechanical. In those cases, bullets, examples, and explicit do or do not guidance are usually better than long prose.
+
+Keep one concern per rule. If a rule starts teaching two different ideas, split it. Rules should complement each other, not compete for the same territory.
+
+Be concrete without trying to encode every edge case. Good rules guide judgment. Bad rules try to replace judgment with brittle heuristics.
+
+If a rule introduces vocabulary, use it consistently across related rules. The point is not just consistency of tone. The point is consistency of meaning.

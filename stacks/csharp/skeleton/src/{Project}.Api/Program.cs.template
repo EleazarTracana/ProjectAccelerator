@@ -1,0 +1,13 @@
+// Program.cs — Single decision point for application composition.
+//
+// This is where ALL dependency wiring happens. No other code instantiates services.
+//
+// builder.Services
+//     .AddTenancy()                    // Middleware + accessor
+//     .AddConnectionFactory(config)    // Per-tenant DB connections
+//     .AddFeatureServices()            // Feature area registrations
+//     .AddExceptionHandler<GlobalExceptionHandler>()
+//     .AddFluentValidation();
+//
+// app.UseMiddleware<TenancyMiddleware>();
+// app.MapControllers();

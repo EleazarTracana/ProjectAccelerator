@@ -1,0 +1,17 @@
+// {Project}.Api / Features / {Area} / {Slice} / {Slice}Service.cs
+//
+// Service = use-case logic. Receives dependencies via constructor injection.
+// Returns Result<T> (Ardalis.Result) — not raw exceptions for business outcomes.
+//
+// public class GetOrderService(IOrderRepository repository)
+// {
+//     public async Task<Result<GetOrderResponse>> ExecuteAsync(long id, CancellationToken ct)
+//     {
+//         var order = await repository.GetByIdAsync(id, ct);
+//         if (order is null)
+//             return Result.NotFound($"Order {id} not found");
+//         return Result.Success(new GetOrderResponse(...));
+//     }
+// }
+//
+// Dependencies: shared kernel, shared infrastructure, NOT other features.
