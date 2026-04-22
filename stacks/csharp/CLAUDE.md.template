@@ -17,9 +17,9 @@ Feature folders must not reference other feature folders. Cross-feature communic
 The following conventions are always active:
 
 - **TDD discipline**: Test-first for behavior changes and bug fixes. See `guardrail-tdd-review-loop.mdc`.
-- **Observability**: Structured logging with correlation IDs, log intent not mechanics. See `project-observability.mdc`.
+- **Observability**: Structured logging with correlation IDs, log intent not mechanics. See `convention-observability.mdc`.
 - **Delegation-ready plans**: Break work into verifiable steps before implementing. See `guardrail-delegation-ready-plans.mdc`.
-- **Feature vocabulary**: Use the project's domain terms consistently. See `project-feature-vocabulary.mdc`.
+- **Feature vocabulary**: Use the project's domain terms consistently. See `arch-feature-vocabulary.mdc`.
 
 ## Testing
 

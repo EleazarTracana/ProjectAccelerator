@@ -1,0 +1,15 @@
+---
+description: Before adding documentation under docs/, decide if an ADR is the right home
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# ADR-First Triage
+
+Before creating a new document under `docs/`, pause and ask whether the content is really an architecture decision in disguise. Many documents that start as "design notes" or "feature overviews" are actually recording a structural choice, the alternatives that were considered, and the constraints that made one path win. That belongs in an ADR, not in a loose file at the docs root.
+
+Create or extend an ADR in `docs/adl/` when the write-up records a lasting structural choice (data model, service boundary, major dependency, failure-mode trade-off), alternatives considered and why one path won, or something future readers must not unknowingly violate (invariants, cost posture, concurrency assumptions).
+
+Keep outside ADRs when the content is a runbook (incident recovery, operator steps), reference or mapping material, or working notes that are explicitly ephemeral.
+
+If unsure, lean toward the ADR. A short ADR that captures a decision is more useful than a long doc that buries the decision inside narrative. The `docs-adl.mdc` rule and `docs-adr-template.mdc` cover the format once you decide to write one.

@@ -15,3 +15,14 @@ Keep one concern per rule. If a rule starts teaching two different ideas, split 
 Be concrete without trying to encode every edge case. Good rules guide judgment. Bad rules try to replace judgment with brittle heuristics.
 
 If a rule introduces vocabulary, use it consistently across related rules. The point is not just consistency of tone. The point is consistency of meaning.
+
+## Naming Convention
+
+Rule files use a prefix that signals their category. The prefix is the first word before the hyphen.
+
+- **`arch-`** — Architecture decisions. Structural principles that shape how modules relate to each other: dependency direction, feature boundaries, vocabulary.
+- **`convention-`** — Code conventions. Practical agreements about how code is written and maintained: observability, pagination, dead code cleanup.
+- **`guardrail-`** — Process discipline. Constraints on how work is done, not what is built: TDD, delegation plans, this rule.
+- **`docs-`** — Documentation standards. How documentation is written, organized, and maintained: ADRs, writing style.
+
+Stack-specific rules use the stack as prefix: `csharp-`, `python-`, `frontend-`.

@@ -1,0 +1,18 @@
+---
+description: Dependency direction — all dependencies point inward toward the domain
+alwaysApply: true
+---
+
+# Dependency Direction
+
+Dependencies point inward. The domain kernel sits at the center and depends on nothing. Everything else depends on it, never the reverse.
+
+The domain kernel holds entities, value objects, repository interfaces, and pure business logic. It has no knowledge of HTTP, databases, queues, or any specific technology. If the kernel needs something from the outside world, it declares an interface. Infrastructure implements that interface. This is the dependency inversion that makes the architecture testable and portable.
+
+Feature services contain use-case logic. They depend on the domain kernel and on infrastructure abstractions, but never on each other. If two features need to share behavior, that behavior belongs in the kernel or in a shared abstraction — not in a direct cross-feature reference. Cross-feature coupling is the fastest way to turn a clean architecture into a distributed monolith where changing one feature breaks three others.
+
+Infrastructure implements kernel interfaces: repositories, external API clients, message publishers, file storage. It knows about the technology. The domain does not.
+
+The presentation layer — HTTP endpoints, CLI handlers, event consumers — is the outermost ring. It binds external input, calls one service method, and returns the result. It never contains business logic, even "just this one small check."
+
+The practical test is simple: can you delete an entire feature folder and have nothing outside that folder break? If yes, the direction is correct. If not, something is pointing the wrong way.
