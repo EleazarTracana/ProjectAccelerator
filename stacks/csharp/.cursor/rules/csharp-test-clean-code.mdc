@@ -1,0 +1,19 @@
+---
+description: Clean code guidance for C# tests
+globs: "**/*.Tests/**/*.cs"
+alwaysApply: false
+---
+
+# C# Test Clean Code
+
+Write tests that read like a small specification for one behavior.
+
+- Keep one behavior per test method. Rich assertions are good when they prove the same behavior from the same setup; do not mix unrelated behaviors into one test.
+- Make the test body tell the story. Extract setup plumbing, factories, builders, captured HTTP helpers, and canned responses when they repeat, but keep the important assertions in the test.
+- Prefer helpers with domain names such as `CreateSut`, `BuildRequest`, or `SeedOrder` over generic helpers like `Setup1` or `GetData`.
+- Do not hide expectations in assertion helpers that make failures harder to understand. A reader should be able to see what matters without jumping through five helpers.
+- Keep test data intentional. Inline only the values that matter to the scenario; move incidental noise into builders or defaults.
+- Prefer deterministic tests: fixed timestamps, fixed ids, fixed ordering, explicit serialization options.
+- When refactoring shared production helpers or parsing logic, add or update targeted failure-path and edge-case tests, not just happy-path coverage.
+
+Use this rule together with `csharp-unit-testing.mdc`: that rule owns naming, theory/fact selection, and consolidation patterns; this rule owns readability and helper discipline.

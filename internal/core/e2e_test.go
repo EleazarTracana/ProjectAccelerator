@@ -63,7 +63,11 @@ func TestE2EScaffoldAndSync(t *testing.T) {
 		GitInit:      false, // skip git init in tests
 	}
 
-	result, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, opts)
+	result, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, opts)
 	if err != nil {
 		t.Fatalf("Scaffold() error = %v", err)
 	}
@@ -191,7 +195,11 @@ func TestE2EScaffoldExistingPythonProject(t *testing.T) {
 	stackKey := "python"
 	stacks := map[string]config.StackConfig{stackKey: cfg.Manifest.Stacks[stackKey]}
 
-	result, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, ScaffoldOptions{
+	result, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, ScaffoldOptions{
 		CopyRules:    true,
 		ClaudeMD:     true,
 		CopySkeleton: true,
@@ -265,7 +273,11 @@ func TestE2ESyncFlow(t *testing.T) {
 	stacks := map[string]config.StackConfig{stackKey: cfg.Manifest.Stacks[stackKey]}
 
 	// Step 1: Scaffold a project.
-	_, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, ScaffoldOptions{
+	_, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, ScaffoldOptions{
 		CopyRules: true,
 		Register:  true,
 	})
@@ -635,7 +647,11 @@ func TestE2EScaffoldDoesNotOverwriteExistingClaudeMD(t *testing.T) {
 	stackKey := "python"
 	stacks := map[string]config.StackConfig{stackKey: cfg.Manifest.Stacks[stackKey]}
 
-	result, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, ScaffoldOptions{
+	result, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, ScaffoldOptions{
 		CopyRules: true,
 		ClaudeMD:  true,
 	})
@@ -681,7 +697,11 @@ func TestE2ESkeletonPreservesExistingFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, ScaffoldOptions{
+	_, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, ScaffoldOptions{
 		CopySkeleton: true,
 	})
 	if err != nil {
@@ -711,7 +731,11 @@ func TestE2ESkeletonTemplateExtension(t *testing.T) {
 	stackKey := "python"
 	stacks := map[string]config.StackConfig{stackKey: cfg.Manifest.Stacks[stackKey]}
 
-	_, err := Scaffold(cfg.PAHome, targetDir, stacks, cfg.Manifest.UniversalRulesDir, ScaffoldOptions{
+	_, err := Scaffold(ScaffoldInput{
+		PAHome: cfg.PAHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: cfg.Manifest.UniversalRulesDir, UniversalClaudeRulesDir: cfg.Manifest.UniversalClaudeRulesDir,
+		SharedSkeletonDir: cfg.Manifest.SharedSkeletonDir,
+	}, ScaffoldOptions{
 		CopySkeleton: true,
 	})
 	if err != nil {
@@ -773,7 +797,10 @@ func TestE2ECopyDirFlatNameCollision(t *testing.T) {
 	}
 
 	targetDir := t.TempDir()
-	result, err := Scaffold(paHome, targetDir, stacks, "universal/rules", ScaffoldOptions{
+	result, err := Scaffold(ScaffoldInput{
+		PAHome: paHome, TargetDir: targetDir, Stacks: stacks,
+		UniversalRulesDir: "universal/rules",
+	}, ScaffoldOptions{
 		CopyRules: true,
 	})
 	if err != nil {

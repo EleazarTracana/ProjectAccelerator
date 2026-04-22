@@ -1,0 +1,39 @@
+---
+description: Clean code guidance for C# source and tests
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# C# Clean Code
+
+Write C# that is easy for the next teammate to read, change, and trust. Prefer intention-revealing code over cleverness.
+
+## Names
+
+- Names must reveal intent. Prefer names like `ParsePayload`, `DeserializeRecord`, `MapFailedReport`, `hasItems`, and `claimId` over vague placeholders or abbreviations such as `Handle`, `ProcessData`, `DoWork`, `obj`, `data`, `tmp`, or `ctx` when the broader meaning is known.
+- Booleans should read like questions: `isEnabled`, `hasItems`, `shouldRetry`.
+- Do not encode types in names (`itemsList`, `nameString`, `flagBool`).
+
+## Functions and Flow
+
+- Keep methods small and focused. If a method is doing orchestration, parsing, mapping, validation, and fallback handling, split it.
+- Prefer guard clauses and helper extraction over deep nesting.
+- Avoid flag arguments. Split behavior into separate methods or model the input with a dedicated type.
+- Replace magic values with named constants when the meaning is not obvious.
+- Prefer positive conditionals and explanatory variables when the alternative is mentally reversing the code in your head.
+- When a method starts requiring comments to explain the control flow, rewrite the method shape instead of layering comments on top.
+
+## Abstractions and Layers
+
+- Put shared behavior in the shared abstraction once a second consumer appears. Do not duplicate JSON setup, failure mapping, or transport plumbing across sibling services.
+- Keep concrete services focused on domain-specific choices such as filters, identifiers, and caller-facing shapes.
+- Keep ownership at the right layer. Shared dependencies belong in the service/root registration, not in a provider-specific detail.
+- Prefer encapsulating boundary conditions in one place instead of scattering null, status, or conversion handling across multiple methods.
+- Prefer dependency injection and narrow collaborations. A class should know its direct dependencies, not reach through one object to manipulate another.
+
+Before finishing, ask:
+
+1. Is this method doing one thing?
+2. Is this responsibility in the right layer?
+3. Did I remove duplication or just move it around?
+4. Would a teammate understand the happy path without reading every branch?

@@ -1,0 +1,46 @@
+---
+description: Prefer strong typed parsing over raw JsonElement plumbing
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# C# Parsing Boundaries
+
+Treat `JsonElement` as a boundary type, not a business-logic working type.
+
+## Core Rules
+
+- Prefer strong typed request/response records, DTOs, or value objects as soon as the payload shape is known.
+- If the architecture requires `JsonElement` at the edge (for example pass-through payloads, queue envelopes, or pipeline trigger seams), deserialize or wrap it immediately once the code crosses into service or handler logic.
+- Do not scatter `TryGetProperty`, `ValueKind`, and ad-hoc field extraction across orchestration code. Hide parsing in a typed model, converter, or focused helper.
+- If the payload has a stable shape, create a dedicated record/class for it instead of manually walking JSON.
+- Keep parsing, validation, and mapping close together. One component should own the boundary condition instead of making downstream code remember JSON details.
+- Use `JsonElement` directly only when the shape is genuinely dynamic, deferred validation is required, or the architecture explicitly demands opaque transport.
+- When you must use `JsonElement`, encapsulate the raw access behind intention-revealing helpers like `ParsePayload`, `TryReadId`, or `DeserializeItems`.
+- Prefer serializer options and converters in one shared place when multiple consumers need the same behavior.
+
+## Anti-Patterns to Avoid
+
+### Do Not Branch on ValueKind for Dual Contracts
+
+Do not use `JsonElement.ValueKind` checks to support multiple payload shapes in the same handler:
+
+```csharp
+// BAD: Handler guesses the contract based on JSON type
+return payload.Value.ValueKind == JsonValueKind.Object
+    ? ParseObjectPayload(payload.Value)
+    : ParseArrayPayload(payload.Value);
+```
+
+This creates an implicit dual contract that makes the API surface unclear. Callers cannot know what to send without reading implementation details.
+
+**Fix:** Define ONE contract. If you need backward compatibility, version the endpoint or migrate callers. The handler should know its contract, not guess.
+
+```csharp
+// GOOD: Single deterministic contract
+var request = JsonSerializer.Deserialize<DeliveryRequestPayload>(json);
+```
+
+## Boundary Note
+
+Some endpoints and envelopes intentionally stay `JsonElement` at the transport seam. That exception does not justify leaking raw JSON handling into domain or orchestration code.

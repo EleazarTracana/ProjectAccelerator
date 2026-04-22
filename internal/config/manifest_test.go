@@ -128,6 +128,68 @@ stacks: {}
 			wantErr: true,
 		},
 		{
+			name: "new fields parse correctly when present",
+			setup: func(t *testing.T) string {
+				dir := t.TempDir()
+				path := filepath.Join(dir, "pa.yaml")
+				content := `version: 1
+universal_rules_dir: .cursor/rules
+universal_claude_rules_dir: .claude/rules
+shared_skeleton_dir: shared
+stacks:
+  python:
+    name: Python
+    detect:
+      - "*.py"
+`
+				if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			wantErr: false,
+			check: func(t *testing.T, m *Manifest) {
+				if m.UniversalClaudeRulesDir != ".claude/rules" {
+					t.Errorf("UniversalClaudeRulesDir = %q, want %q", m.UniversalClaudeRulesDir, ".claude/rules")
+				}
+				if m.SharedSkeletonDir != "shared" {
+					t.Errorf("SharedSkeletonDir = %q, want %q", m.SharedSkeletonDir, "shared")
+				}
+				if m.UniversalRulesDir != ".cursor/rules" {
+					t.Errorf("UniversalRulesDir = %q, want %q", m.UniversalRulesDir, ".cursor/rules")
+				}
+			},
+		},
+		{
+			name: "new fields default to empty when absent",
+			setup: func(t *testing.T) string {
+				dir := t.TempDir()
+				path := filepath.Join(dir, "pa.yaml")
+				content := `version: 1
+universal_rules_dir: .cursor/rules
+stacks:
+  python:
+    name: Python
+`
+				if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			wantErr: false,
+			check: func(t *testing.T, m *Manifest) {
+				if m.UniversalClaudeRulesDir != "" {
+					t.Errorf("UniversalClaudeRulesDir = %q, want empty", m.UniversalClaudeRulesDir)
+				}
+				if m.SharedSkeletonDir != "" {
+					t.Errorf("SharedSkeletonDir = %q, want empty", m.SharedSkeletonDir)
+				}
+				if m.UniversalRulesDir != ".cursor/rules" {
+					t.Errorf("existing UniversalRulesDir = %q, want %q", m.UniversalRulesDir, ".cursor/rules")
+				}
+			},
+		},
+		{
 			name: "non-existent file returns error",
 			setup: func(t *testing.T) string {
 				return filepath.Join(t.TempDir(), "does_not_exist.yaml")

@@ -1,0 +1,38 @@
+---
+globs:
+  - .cursor/rules/**/*.mdc
+description: When a Cursor rule under .cursor/rules changes, mirror it into the Claude rule set
+---
+
+# Auto-sync Cursor Rules → Claude Rules (Cursor)
+
+This repo maintains BOTH `.cursor/rules/` (for Cursor) AND `.claude/rules/` + `.claude/skills/` + `CLAUDE.md` (for Claude Code). Both sides MUST stay in sync because the team uses both editors.
+
+**Scope:** Cursor agents and humans edit **only** `.cursor/rules/*.mdc`. This rule fires when **those** files change. It does **not** apply when someone edits `.claude/` or `CLAUDE.md` in another tool—that workflow lives in [`.claude/rules/sync-rules-on-edit.md`](.claude/rules/sync-rules-on-edit.md) for Claude Code.
+
+This slug is excluded from `scripts/sync-rules.mjs` mirroring (`EXCLUDED_SYNC_SLUGS`) so Cursor and Claude each keep their own copy of these instructions.
+
+## When this rule fires
+
+You created or modified a file under `.cursor/rules/**/*.mdc` (including this file).
+
+## What you MUST do (immediately, in the same turn)
+
+1. Run the sync script from the repo root:
+
+   ```bash
+   node scripts/sync-rules.mjs --from cursor
+   ```
+
+2. Inspect the script output. It will report which Claude-side files were created/updated:
+   - `alwaysApply: true` rules → inlined inside `CLAUDE.md` between the `<!-- ALWAYS-APPLY-START -->` markers
+   - Rules with `globs:` → written to `.claude/rules/{name}.md` with `paths:` frontmatter
+   - Description-only rules → written to `.claude/skills/{name}/SKILL.md`
+
+3. If you are about to commit, stage the regenerated Claude-side files together with your `.mdc` changes. They MUST land in the same commit so the two sides never diverge in `main`.
+
+4. Do NOT manually edit files marked with `<!-- generated-from: ... -->`. Edit the source `.mdc` instead and re-run the sync.
+
+## Why this matters
+
+Without sync, the team gets ghost behavior: a rule shows up in Cursor but not in Claude (or the reverse), so different teammates get different agent guidance for the same code. That is worse than having no rules at all.

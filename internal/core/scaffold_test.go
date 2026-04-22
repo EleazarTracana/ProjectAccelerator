@@ -105,7 +105,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("copies universal rules to .cursor/rules/", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopyRules: true,
 		})
 		if err != nil {
@@ -124,7 +124,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("copies stack rules to .cursor/rules/", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopyRules: true,
 		})
 		if err != nil {
@@ -147,7 +147,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("renders CLAUDE.md from template", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			ClaudeMD: true,
 		})
 		if err != nil {
@@ -184,7 +184,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("copies skeleton stripping .template extension", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopySkeleton: true,
 		})
 		if err != nil {
@@ -219,7 +219,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("registers project in registry when Register=true", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopyRules: true,
 			Register:  true,
 		})
@@ -249,7 +249,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("partial options — only rules, no skeleton", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopyRules:    true,
 			CopySkeleton: false,
 			ClaudeMD:     false,
@@ -276,7 +276,7 @@ func TestScaffold(t *testing.T) {
 	t.Run("partial options — no options does not fail", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		result, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{})
+		result, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{})
 		if err != nil {
 			t.Fatalf("Scaffold() error = %v", err)
 		}
@@ -289,12 +289,240 @@ func TestScaffold(t *testing.T) {
 		base := t.TempDir()
 		targetDir := filepath.Join(base, "new", "project")
 
-		_, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{})
+		_, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{})
 		if err != nil {
 			t.Fatalf("Scaffold() error = %v", err)
 		}
 		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
 			t.Errorf("target directory %q was not created", targetDir)
+		}
+	})
+}
+
+func TestScaffoldClaudeRulesAndShared(t *testing.T) {
+	redirectRegistryForScaffold(t)
+
+	// Set up a PA_HOME with claude rules and shared skeleton dirs.
+	paHome := t.TempDir()
+
+	// Universal cursor rules.
+	universalRulesDir := "universal/rules"
+	if err := os.MkdirAll(filepath.Join(paHome, universalRulesDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(paHome, universalRulesDir, "global.mdc"), []byte("# cursor rule"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Universal claude rules.
+	claudeRulesDir := "universal/claude-rules"
+	if err := os.MkdirAll(filepath.Join(paHome, claudeRulesDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(paHome, claudeRulesDir, "sync-rules-on-edit.md"), []byte("# claude rule"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Shared skeleton with subdirectory.
+	sharedDir := "shared"
+	if err := os.MkdirAll(filepath.Join(paHome, sharedDir, "scripts"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(paHome, sharedDir, "scripts", "sync-rules.mjs"), []byte("// sync script"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(paHome, sharedDir, ".editorconfig.template"), []byte("root = true"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stacks := map[string]config.StackConfig{
+		"mystack": {Name: "MyStack"},
+	}
+
+	t.Run("copies universal claude rules to .claude/rules/", func(t *testing.T) {
+		targetDir := t.TempDir()
+
+		result, err := Scaffold(ScaffoldInput{
+			PAHome:                  paHome,
+			TargetDir:               targetDir,
+			Stacks:                  stacks,
+			UniversalRulesDir:       universalRulesDir,
+			UniversalClaudeRulesDir: claudeRulesDir,
+		}, ScaffoldOptions{CopyRules: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+		if len(result.Errors) > 0 {
+			t.Fatalf("Scaffold() errors = %v", result.Errors)
+		}
+
+		dst := filepath.Join(targetDir, ".claude", "rules", "sync-rules-on-edit.md")
+		if _, err := os.Stat(dst); os.IsNotExist(err) {
+			t.Errorf("claude rule file not found at %s", dst)
+		}
+		if result.ClaudeRulesCopied != 1 {
+			t.Errorf("ClaudeRulesCopied = %d, want 1", result.ClaudeRulesCopied)
+		}
+	})
+
+	t.Run("copies shared skeleton preserving directory structure", func(t *testing.T) {
+		targetDir := t.TempDir()
+
+		result, err := Scaffold(ScaffoldInput{
+			PAHome:            paHome,
+			TargetDir:         targetDir,
+			Stacks:            stacks,
+			SharedSkeletonDir: sharedDir,
+		}, ScaffoldOptions{CopySkeleton: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+		if len(result.Errors) > 0 {
+			t.Fatalf("Scaffold() errors = %v", result.Errors)
+		}
+
+		// scripts/sync-rules.mjs should exist with subdirectory preserved.
+		syncScript := filepath.Join(targetDir, "scripts", "sync-rules.mjs")
+		if _, err := os.Stat(syncScript); os.IsNotExist(err) {
+			t.Error("scripts/sync-rules.mjs not found — shared skeleton subdirectory not preserved")
+		}
+
+		// .editorconfig.template → .editorconfig (stripped .template suffix).
+		editorCfg := filepath.Join(targetDir, ".editorconfig")
+		if _, err := os.Stat(editorCfg); os.IsNotExist(err) {
+			t.Error(".editorconfig not found — .template suffix should have been stripped")
+		}
+
+		if result.SkeletonCopied != 2 {
+			t.Errorf("SkeletonCopied = %d, want 2", result.SkeletonCopied)
+		}
+	})
+
+	t.Run("claude rules checksum stored in registry", func(t *testing.T) {
+		targetDir := t.TempDir()
+
+		_, err := Scaffold(ScaffoldInput{
+			PAHome:                  paHome,
+			TargetDir:               targetDir,
+			Stacks:                  stacks,
+			UniversalRulesDir:       universalRulesDir,
+			UniversalClaudeRulesDir: claudeRulesDir,
+		}, ScaffoldOptions{CopyRules: true, Register: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+
+		reg, err := config.LoadRegistry()
+		if err != nil {
+			t.Fatalf("LoadRegistry() error = %v", err)
+		}
+		entry := reg.Find(targetDir)
+		if entry == nil {
+			t.Fatal("project not in registry")
+		}
+
+		key := filepath.Join(".claude", "rules", "sync-rules-on-edit.md")
+		sum, ok := entry.Checksums[key]
+		if !ok {
+			t.Errorf("checksum for %q not found in registry entry", key)
+		}
+		if len(sum) < 7 || sum[:7] != "sha256:" {
+			t.Errorf("checksum %q does not have expected sha256: prefix", sum)
+		}
+	})
+
+	t.Run("empty UniversalClaudeRulesDir skips without error", func(t *testing.T) {
+		targetDir := t.TempDir()
+
+		result, err := Scaffold(ScaffoldInput{
+			PAHome:                  paHome,
+			TargetDir:               targetDir,
+			Stacks:                  stacks,
+			UniversalRulesDir:       universalRulesDir,
+			UniversalClaudeRulesDir: "", // empty — should skip
+		}, ScaffoldOptions{CopyRules: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+		if len(result.Errors) > 0 {
+			t.Fatalf("unexpected errors: %v", result.Errors)
+		}
+		if result.ClaudeRulesCopied != 0 {
+			t.Errorf("ClaudeRulesCopied = %d, want 0 when dir is empty", result.ClaudeRulesCopied)
+		}
+
+		// .claude/rules/ directory should not exist.
+		claudeDir := filepath.Join(targetDir, ".claude", "rules")
+		if _, err := os.Stat(claudeDir); err == nil {
+			t.Error(".claude/rules/ should not be created when UniversalClaudeRulesDir is empty")
+		}
+	})
+
+	t.Run("empty SharedSkeletonDir skips without error", func(t *testing.T) {
+		targetDir := t.TempDir()
+
+		result, err := Scaffold(ScaffoldInput{
+			PAHome:            paHome,
+			TargetDir:         targetDir,
+			Stacks:            stacks,
+			SharedSkeletonDir: "", // empty — should skip
+		}, ScaffoldOptions{CopySkeleton: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+		if len(result.Errors) > 0 {
+			t.Fatalf("unexpected errors: %v", result.Errors)
+		}
+		if result.SkeletonCopied != 0 {
+			t.Errorf("SkeletonCopied = %d, want 0 when dir is empty", result.SkeletonCopied)
+		}
+	})
+
+	t.Run("stack skeleton takes priority over shared skeleton", func(t *testing.T) {
+		// Create a second PA_HOME with both shared and stack skeleton containing
+		// a file at the same relative path. The stack version must win.
+		ph := t.TempDir()
+
+		sharedSkel := "shared-skel"
+		if err := os.MkdirAll(filepath.Join(ph, sharedSkel), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(ph, sharedSkel, "config.yaml"), []byte("shared-version"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		stackSkel := "stacks/mystack/skeleton"
+		if err := os.MkdirAll(filepath.Join(ph, stackSkel), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(ph, stackSkel, "config.yaml"), []byte("stack-version"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		targetDir := t.TempDir()
+		stacksCfg := map[string]config.StackConfig{
+			"mystack": {Name: "MyStack", SkeletonDir: stackSkel},
+		}
+
+		result, err := Scaffold(ScaffoldInput{
+			PAHome:            ph,
+			TargetDir:         targetDir,
+			Stacks:            stacksCfg,
+			SharedSkeletonDir: sharedSkel,
+		}, ScaffoldOptions{CopySkeleton: true})
+		if err != nil {
+			t.Fatalf("Scaffold() error = %v", err)
+		}
+		if len(result.Errors) > 0 {
+			t.Fatalf("Scaffold() errors = %v", result.Errors)
+		}
+
+		data, err := os.ReadFile(filepath.Join(targetDir, "config.yaml"))
+		if err != nil {
+			t.Fatalf("config.yaml not found: %v", err)
+		}
+		if string(data) != "stack-version" {
+			t.Errorf("config.yaml = %q, want %q — stack skeleton should take priority over shared", string(data), "stack-version")
 		}
 	})
 }
@@ -310,7 +538,7 @@ func TestScaffoldChecksums(t *testing.T) {
 	t.Run("registry entry has checksums for copied rules", func(t *testing.T) {
 		targetDir := t.TempDir()
 
-		_, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		_, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			CopyRules: true,
 			Register:  true,
 		})
@@ -341,7 +569,7 @@ func TestScaffoldChecksums(t *testing.T) {
 		targetDir := t.TempDir()
 		before := time.Now().UTC().Add(-time.Second)
 
-		_, err := Scaffold(paHome, targetDir, stacks, universalRulesDir, ScaffoldOptions{
+		_, err := Scaffold(ScaffoldInput{PAHome: paHome, TargetDir: targetDir, Stacks: stacks, UniversalRulesDir: universalRulesDir}, ScaffoldOptions{
 			Register: true,
 		})
 		if err != nil {

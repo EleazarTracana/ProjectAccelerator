@@ -18,9 +18,11 @@ type StackConfig struct {
 
 // Manifest represents the pa.yaml file.
 type Manifest struct {
-	Version           int                    `yaml:"version"`
-	Stacks            map[string]StackConfig `yaml:"stacks"`
-	UniversalRulesDir string                 `yaml:"universal_rules_dir"`
+	Version                 int                    `yaml:"version"`
+	Stacks                  map[string]StackConfig `yaml:"stacks"`
+	UniversalRulesDir       string                 `yaml:"universal_rules_dir"`
+	UniversalClaudeRulesDir string                 `yaml:"universal_claude_rules_dir"`
+	SharedSkeletonDir       string                 `yaml:"shared_skeleton_dir"`
 }
 
 // LoadManifest reads and parses pa.yaml from the given path.

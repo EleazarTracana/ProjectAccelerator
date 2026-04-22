@@ -24,29 +24,34 @@ type ScaffoldOptions struct {
 	Register     bool
 }
 
+// ScaffoldInput holds all manifest-derived parameters for a scaffold operation.
+type ScaffoldInput struct {
+	PAHome                  string
+	TargetDir               string
+	Stacks                  map[string]config.StackConfig
+	UniversalRulesDir       string // relative to PAHome; copied to .cursor/rules/
+	UniversalClaudeRulesDir string // relative to PAHome; copied to .claude/rules/
+	SharedSkeletonDir       string // relative to PAHome; copied via copySkeleton
+}
+
 // ScaffoldResult reports what the scaffold operation did.
 type ScaffoldResult struct {
-	RulesCopied     int
-	SkeletonCopied  int
-	ClaudeMDCreated bool
-	GitInitDone     bool
-	Registered      bool
-	Errors          []string
+	RulesCopied       int
+	ClaudeRulesCopied int
+	SkeletonCopied    int
+	ClaudeMDCreated   bool
+	GitInitDone       bool
+	Registered        bool
+	Errors            []string
 }
 
 // Scaffold executes the scaffold process for a target directory.
-//
-//   - paHome            – resolved absolute path to the ProjectAccelerator root.
-//   - targetDir         – destination directory (created if absent).
-//   - stacks            – map of stackKey → StackConfig for all selected stacks.
-//   - universalRulesDir – manifest-level universal rules dir (relative to paHome).
-//   - opts              – which steps to perform.
-func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, universalRulesDir string, opts ScaffoldOptions) (*ScaffoldResult, error) {
+func Scaffold(in ScaffoldInput, opts ScaffoldOptions) (*ScaffoldResult, error) {
 	result := &ScaffoldResult{}
 
 	// Ensure the target directory exists.
-	if err := os.MkdirAll(targetDir, 0o755); err != nil {
-		return nil, fmt.Errorf("creating target directory %q: %w", targetDir, err)
+	if err := os.MkdirAll(in.TargetDir, 0o755); err != nil {
+		return nil, fmt.Errorf("creating target directory %q: %w", in.TargetDir, err)
 	}
 
 	// Track checksums for files we copy so they can be stored in the registry.
@@ -54,14 +59,15 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 
 	// ── 1. Copy rules ────────────────────────────────────────────────────────
 	if opts.CopyRules {
-		rulesDestDir := filepath.Join(targetDir, ".cursor", "rules")
+		// 1a. Cursor rules (.cursor/rules/)
+		rulesDestDir := filepath.Join(in.TargetDir, ".cursor", "rules")
 		if err := os.MkdirAll(rulesDestDir, 0o755); err != nil {
 			return nil, fmt.Errorf("creating rules destination directory: %w", err)
 		}
 
-		// Universal rules (copied once, regardless of how many stacks are selected).
-		if universalRulesDir != "" {
-			uSrc := filepath.Join(paHome, universalRulesDir)
+		// Universal cursor rules.
+		if in.UniversalRulesDir != "" {
+			uSrc := filepath.Join(in.PAHome, in.UniversalRulesDir)
 			n, checksums, err := copyDirFlat(uSrc, rulesDestDir)
 			if err != nil {
 				result.Errors = append(result.Errors, fmt.Sprintf("copying universal rules: %v", err))
@@ -73,10 +79,10 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 			}
 		}
 
-		// Stack-specific rules for each selected stack.
-		for stackKey, stack := range stacks {
+		// Stack-specific cursor rules.
+		for stackKey, stack := range in.Stacks {
 			if stack.RulesDir != "" {
-				sSrc := filepath.Join(paHome, stack.RulesDir)
+				sSrc := filepath.Join(in.PAHome, stack.RulesDir)
 				n, checksums, err := copyDirFlat(sSrc, rulesDestDir)
 				if err != nil {
 					result.Errors = append(result.Errors, fmt.Sprintf("copying stack rules for %q: %v", stackKey, err))
@@ -88,14 +94,33 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 				}
 			}
 		}
+
+		// 1b. Claude rules (.claude/rules/)
+		// Destination dir is created by copyFile inside copyDirFlat — no pre-emptive
+		// MkdirAll here so we don't leave an empty .claude/rules/ when the source
+		// directory doesn't exist.
+		if in.UniversalClaudeRulesDir != "" {
+			claudeRulesSrc := filepath.Join(in.PAHome, in.UniversalClaudeRulesDir)
+			claudeRulesDst := filepath.Join(in.TargetDir, ".claude", "rules")
+			n, checksums, err := copyDirFlat(claudeRulesSrc, claudeRulesDst)
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("copying claude rules: %v", err))
+			} else {
+				result.ClaudeRulesCopied += n
+				for rel, sum := range checksums {
+					copiedChecksums[filepath.Join(".claude", "rules", rel)] = sum
+				}
+			}
+		}
 	}
 
 	// ── 2. Copy skeleton ─────────────────────────────────────────────────────
 	if opts.CopySkeleton {
-		for stackKey, stack := range stacks {
+		// 2a. Stack-specific skeletons first — they take priority over shared defaults.
+		for stackKey, stack := range in.Stacks {
 			if stack.SkeletonDir != "" {
-				skelSrc := filepath.Join(paHome, stack.SkeletonDir)
-				n, checksums, err := copySkeleton(skelSrc, targetDir)
+				skelSrc := filepath.Join(in.PAHome, stack.SkeletonDir)
+				n, checksums, err := copySkeleton(skelSrc, in.TargetDir)
 				if err != nil {
 					result.Errors = append(result.Errors, fmt.Sprintf("copying skeleton for %q: %v", stackKey, err))
 				} else {
@@ -106,14 +131,28 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 				}
 			}
 		}
+
+		// 2b. Shared skeleton fills gaps — copySkeleton skips files that already exist.
+		if in.SharedSkeletonDir != "" {
+			sharedSrc := filepath.Join(in.PAHome, in.SharedSkeletonDir)
+			n, checksums, err := copySkeleton(sharedSrc, in.TargetDir)
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("copying shared skeleton: %v", err))
+			} else {
+				result.SkeletonCopied += n
+				for rel, sum := range checksums {
+					copiedChecksums[rel] = sum
+				}
+			}
+		}
 	}
 
 	// ── 3. Render CLAUDE.md ──────────────────────────────────────────────────
 	if opts.ClaudeMD {
-		claudeDst := filepath.Join(targetDir, "CLAUDE.md")
+		claudeDst := filepath.Join(in.TargetDir, "CLAUDE.md")
 		// Don't overwrite an existing CLAUDE.md.
 		if _, err := os.Stat(claudeDst); os.IsNotExist(err) {
-			created, err := renderMultiClaudeMD(paHome, targetDir, stacks)
+			created, err := renderMultiClaudeMD(in.PAHome, in.TargetDir, in.Stacks)
 			if err != nil {
 				result.Errors = append(result.Errors, fmt.Sprintf("rendering CLAUDE.md: %v", err))
 			} else {
@@ -130,8 +169,8 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 
 	// ── 4. git init ──────────────────────────────────────────────────────────
 	if opts.GitInit {
-		cmd := exec.Command("git", "init", targetDir)
-		cmd.Dir = targetDir
+		cmd := exec.Command("git", "init", in.TargetDir)
+		cmd.Dir = in.TargetDir
 		if out, err := cmd.CombinedOutput(); err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("git init: %v — %s", err, strings.TrimSpace(string(out))))
 		} else {
@@ -141,11 +180,11 @@ func Scaffold(paHome, targetDir string, stacks map[string]config.StackConfig, un
 
 	// ── 5. Register project ──────────────────────────────────────────────────
 	if opts.Register {
-		stackKeys := make([]string, 0, len(stacks))
-		for k := range stacks {
+		stackKeys := make([]string, 0, len(in.Stacks))
+		for k := range in.Stacks {
 			stackKeys = append(stackKeys, k)
 		}
-		if err := registerProject(targetDir, stackKeys, copiedChecksums); err != nil {
+		if err := registerProject(in.TargetDir, stackKeys, copiedChecksums); err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("registering project: %v", err))
 		} else {
 			result.Registered = true

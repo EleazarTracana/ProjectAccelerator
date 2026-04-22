@@ -1,0 +1,16 @@
+---
+description: C# timestamps must preserve UTC information — use DateTimeOffset over DateTime
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# C# UTC DateTime Rule
+
+Use `DateTimeOffset` for model, DTO, record, and request/response timestamp properties so UTC information is preserved across persistence and JSON serialization.
+
+## Required
+
+- Prefer `DateTimeOffset` over `DateTime` in contracts and models.
+- Use `DateTimeOffset.UtcNow` when creating timestamps.
+- When adding or changing SQL-backed timestamps, store them as `DATETIMEOFFSET`, not `DATETIME2`.
+- Keep offsets at UTC (`+00:00`) for server-generated timestamps.

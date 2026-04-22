@@ -1,0 +1,28 @@
+---
+description: Docs describe current responsibility only — no migration history, legacy narration, or phase references outside ADRs
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Documentation: Current State Only
+
+Good documentation describes what a type, method, or module does today. It does not narrate the journey that led here. When a reader encounters a doc comment or non-ADR markdown document, they should find the current contract and responsibility — not a changelog entry or a migration footnote.
+
+Avoid language that positions the subject relative to something it replaced or something that was retired before it:
+
+```
+# ❌ Narrates history
+Distinct from the legacy OrderProcessor used for catalog metadata only.
+
+# ✅ Describes current responsibility
+Configures a vendor's pipeline definitions and catalog registration.
+```
+
+Do not use these phrases in source files or non-ADR markdown unless an explicit exception applies: **formerly**, **replaced**, **legacy**, **Phase N** (as in "Phase 2 refactor"), **migration artifact**, **was previously**, **used to**.
+
+Reserve "legacy" and historical framing for two cases only:
+
+1. A type that is explicitly marked as deprecated — the deprecation message may name the successor.
+2. ADR revision notes inside `docs/adl/` — that is the designated home for architectural history.
+
+If you find yourself wanting to explain what this code replaced, stop and ask whether the current doc comment or markdown section would still be clear without that explanation. Usually it will be. If context is genuinely necessary, it belongs in an ADR or a code comment explicitly marked as a decision rationale — not in a summary or module-level description.

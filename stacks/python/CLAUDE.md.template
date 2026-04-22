@@ -75,3 +75,7 @@ sdd/{change}/{phase}         — SDD workflow artifacts (proposal, spec, design,
 ### Session Close
 
 Before ending a session, call `mem_session_summary` with goal, discoveries, accomplished, next steps, and relevant files.
+
+<!-- ALWAYS-APPLY-START — managed by scripts/sync-rules.mjs — DO NOT EDIT INSIDE THIS BLOCK MANUALLY -->
+
+<!-- ALWAYS-APPLY-END — your custom CLAUDE.md content goes ABOVE this block -->

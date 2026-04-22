@@ -26,3 +26,5 @@ stacks:
     skeleton_dir: "stacks/frontend/skeleton"
     claude_template: ""
 universal_rules_dir: ".cursor/rules"
+universal_claude_rules_dir: ".claude/rules"
+shared_skeleton_dir: "shared"

@@ -100,7 +100,7 @@ func newScaffoldModel(cfg *config.Config) scaffoldModel {
 	// Default options — all checked.
 	opts := []checklistItem{
 		{label: "Initialize git repository", checked: true},
-		{label: "Copy cursor rules (universal + stack)", checked: true},
+		{label: "Copy rules (Cursor + Claude)", checked: true},
 		{label: "Generate CLAUDE.md from template", checked: true},
 		{label: "Copy skeleton structure", checked: true},
 		{label: "Register for future sync", checked: true},
@@ -453,10 +453,14 @@ func (m scaffoldModel) executeScaffold() tea.Cmd {
 		}
 
 		result, err := core.Scaffold(
-			m.cfg.PAHome,
-			targetDir,
-			selectedStacks,
-			m.cfg.Manifest.UniversalRulesDir,
+			core.ScaffoldInput{
+				PAHome:                  m.cfg.PAHome,
+				TargetDir:               targetDir,
+				Stacks:                  selectedStacks,
+				UniversalRulesDir:       m.cfg.Manifest.UniversalRulesDir,
+				UniversalClaudeRulesDir: m.cfg.Manifest.UniversalClaudeRulesDir,
+				SharedSkeletonDir:       m.cfg.Manifest.SharedSkeletonDir,
+			},
 			opts,
 		)
 		if err != nil {
@@ -521,7 +525,10 @@ func (m scaffoldModel) viewResult() string {
 	b.WriteString("\n\n")
 
 	r := m.result
-	b.WriteString(fmt.Sprintf("  %s %d\n", accentStyle.Render("Rules copied:"), r.RulesCopied))
+	b.WriteString(fmt.Sprintf("  %s %d\n", accentStyle.Render("Cursor rules copied:"), r.RulesCopied))
+	if r.ClaudeRulesCopied > 0 {
+		b.WriteString(fmt.Sprintf("  %s %d\n", accentStyle.Render("Claude rules copied:"), r.ClaudeRulesCopied))
+	}
 	b.WriteString(fmt.Sprintf("  %s %d\n", accentStyle.Render("Skeleton files:"), r.SkeletonCopied))
 
 	if r.ClaudeMDCreated {
